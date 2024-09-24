@@ -25,30 +25,30 @@ public final class Packet {
 	private Packet(Class... var1) {
 		PACKETS[this.id] = this;
 		this.fields = new Class[var1.length];
-		int var2 = 0;
+		int packetSize = 0;
 
 		for(int var3 = 0; var3 < var1.length; ++var3) {
 			Class var4 = var1[var3];
 			this.fields[var3] = var4;
 			if(var4 == Long.TYPE) {
-				var2 += 8;
+				packetSize += 8;
 			} else if(var4 == Integer.TYPE) {
-				var2 += 4;
+				packetSize += 4;
 			} else if(var4 == Short.TYPE) {
-				var2 += 2;
+				packetSize += 2;
 			} else if(var4 == Byte.TYPE) {
-				++var2;
+				++packetSize;
 			} else if(var4 == Float.TYPE) {
-				var2 += 4;
+				packetSize += 4;
 			} else if(var4 == Double.TYPE) {
-				var2 += 8;
+				packetSize += 8;
 			} else if(var4 == byte[].class) {
-				var2 += 1024;
+				packetSize += 1024;
 			} else if(var4 == String.class) {
-				var2 += 64;
+				packetSize += 64;
 			}
 		}
 
-		this.size = var2;
+		this.size = packetSize;
 	}
 }

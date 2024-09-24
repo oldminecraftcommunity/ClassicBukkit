@@ -56,58 +56,52 @@ public final class SocketConnection {
 		this.socketChannel = null;
 	}
 
-	public final void sendPacket(Packet var1, Object... var2) {
+	public final void sendPacket(Packet packet, Object... data) {
 		if(this.connected) {
-			this.writeBuffer.put(var1.id);
+			this.writeBuffer.put(packet.id);
 
-			for(int var3 = 0; var3 < var2.length; ++var3) {
-				Class var10001 = var1.fields[var3];
-				Object var6 = var2[var3];
-				Class var5 = var10001;
-				SocketConnection var4 = this;
+			for(int di = 0; di < data.length; ++di) {
+				Object dataValue = data[di];
+				Class dataType = packet.fields[di];
+				SocketConnection con = this;
 				if(this.connected) {
 					try {
-						if(var5 == Long.TYPE) {
-							var4.writeBuffer.putLong(((Long)var6).longValue());
-						} else if(var5 == Integer.TYPE) {
-							var4.writeBuffer.putInt(((Number)var6).intValue());
-						} else if(var5 == Short.TYPE) {
-							var4.writeBuffer.putShort(((Number)var6).shortValue());
-						} else if(var5 == Byte.TYPE) {
-							var4.writeBuffer.put(((Number)var6).byteValue());
-						} else if(var5 == Double.TYPE) {
-							var4.writeBuffer.putDouble(((Double)var6).doubleValue());
-						} else if(var5 == Float.TYPE) {
-							var4.writeBuffer.putFloat(((Float)var6).floatValue());
-						} else {
-							byte[] var8;
-							if(var5 != String.class) {
-								if(var5 == byte[].class) {
-									var8 = (byte[])((byte[])var6);
-									if(var8.length < 1024) {
-										var8 = Arrays.copyOf(var8, 1024);
-									}
-
-									var4.writeBuffer.put(var8);
-								}
-							} else {
-								var8 = ((String)var6).getBytes("UTF-8");
-								Arrays.fill(var4.stringPacket, (byte)32);
-
-								int var9;
-								for(var9 = 0; var9 < 64 && var9 < var8.length; ++var9) {
-									var4.stringPacket[var9] = var8[var9];
-								}
-
-								for(var9 = var8.length; var9 < 64; ++var9) {
-									var4.stringPacket[var9] = 32;
-								}
-
-								var4.writeBuffer.put(var4.stringPacket);
+						if(dataType == Long.TYPE) {
+							con.writeBuffer.putLong(((Long)dataValue).longValue());
+						} else if(dataType == Integer.TYPE) {
+							con.writeBuffer.putInt(((Number)dataValue).intValue());
+						} else if(dataType == Short.TYPE) {
+							con.writeBuffer.putShort(((Number)dataValue).shortValue());
+						} else if(dataType == Byte.TYPE) {
+							con.writeBuffer.put(((Number)dataValue).byteValue());
+						} else if(dataType == Double.TYPE) {
+							con.writeBuffer.putDouble(((Double)dataValue).doubleValue());
+						} else if(dataType == Float.TYPE) {
+							con.writeBuffer.putFloat(((Float)dataValue).floatValue());
+						} else if(dataType == byte[].class){
+							byte[] arr = (byte[])((byte[])dataValue);
+							if(arr.length < 1024) {
+								arr = Arrays.copyOf(arr, 1024);
 							}
+
+							con.writeBuffer.put(arr);
+						}else if(dataType == String.class){
+							byte[] str = ((String)dataValue).getBytes("UTF-8");
+							Arrays.fill(con.stringPacket, (byte)32); //XXX might be useless
+
+							int si;
+							for(si = 0; si < 64 && si < str.length; ++si) {
+								con.stringPacket[si] = str[si];
+							}
+
+							for(si = str.length; si < 64; ++si) {
+								con.stringPacket[si] = 32;
+							}
+
+							con.writeBuffer.put(con.stringPacket);
 						}
-					} catch (Exception var7) {
-						this.player.handleException(var7);
+					} catch (Exception e) {
+						this.player.handleException(e);
 					}
 				}
 			}

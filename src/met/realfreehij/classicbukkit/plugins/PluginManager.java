@@ -56,7 +56,7 @@ public class PluginManager {
                         break;
                 }
             }
-
+            
             if(name == null) {
                 System.out.println("no name in plugin.yml in " + jarFile.getName());
                 return;

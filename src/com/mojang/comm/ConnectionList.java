@@ -10,7 +10,7 @@ import java.util.List;
 public final class ConnectionList {
 	public ServerSocketChannel serverSocketChannel;
 	public MinecraftServer minecraft;
-	public List connectionList = new LinkedList();
+	public List<SocketConnection> connectionList = new LinkedList<SocketConnection>();
 
 	public ConnectionList(int var1, MinecraftServer var2) throws IOException {
 		this.minecraft = var2;

@@ -54,117 +54,106 @@ public final class PlayerInstance {
 	}
 
 	public final String toString() {
-		SocketConnection var1;
-		if(!this.onlyIP) {
-			var1 = this.connection;
-			return var1.ip;
-		} else {
-			StringBuilder var10000 = (new StringBuilder()).append(this.name).append(" (");
-			var1 = this.connection;
-			return var10000.append(var1.ip).append(")").toString();
-		}
+		if(!this.onlyIP) return this.connection.ip;
+		else return this.name + " (" + this.connection.ip + ")";
 	}
 
-	public final void handlePackets(Packet var1, Object[] var2) {
-		if(!this.ignorePackets) {
-			if(var1 != Packet.LOGIN) {
-				if(var1 != Packet.TIMED_OUT) {
-					if(this.onlyIP && this.sendingPackets) {
-						if(var1 == Packet.PLACE_OR_REMOVE_TILE) {
-							EventSetTilePlayer event = new EventSetTilePlayer((short)var2[0], (short)var2[1], (short)var2[2], (byte)var2[4], this);
-							ClassicBukkit.pluginManager.fireSetTile(event);
+	public final void handlePackets(Packet packet, Object[] data) {
+		if(this.ignorePackets) return;
+		
+		if(packet == Packet.LOGIN) {
+			byte protocol = ((Byte)data[0]).byteValue();
+			String username = ((String)data[1]).trim();
+			String var8 = (String)data[2];
+			char[] userarr = username.toCharArray();
 
-							if(event.isCancelled()) {
-								ClassicBukkit.getServer().setTile(((Short)var2[0]).intValue(), ((Short)var2[1]).intValue(), ((Short)var2[2]).intValue());
-								return;
-							}
-
-							var2[0] = event.getX();
-							var2[1] = event.getY();
-							var2[2] = event.getZ();
-							var2[4] = event.getId();
-
-							if(this.placedBlocks.size() > 1200) {
-								this.kickCheat("Too much lag");
-							} else {
-								this.placedBlocks.add(var2);
-							}
-						} else if(var1 == Packet.CHAT_MESSAGE) {
-							String var7 = var2[1].toString().trim();
-							if(var7.length() > 0) {
-								this.chatMessage(var7);
-							}
-
-						} else {
-							if(var1 == Packet.PLAYER_TELEPORT) {
-								if(this.placedBlocks.size() > 1200) {
-									this.kickCheat("Too much lag");
-									return;
-								}
-
-								this.placedBlocks.add(var2);
-							}
-
-						}
-					}
+			for(int var5 = 0; var5 < userarr.length; ++var5) {
+				if(userarr[var5] < 32 || userarr[var5] > 127) {
+					this.kickCheat("Bad name!");
+					return;
 				}
+			}
+
+			if(this.minecraft.verifyNames && !var8.equals(this.minecraft.mpPassCalculator.calcMPass(username))) {
+				this.kick("Illegal name.");
 			} else {
-				byte var6 = ((Byte)var2[0]).byteValue();
-				String var3 = ((String)var2[1]).trim();
-				String var8 = (String)var2[2];
-				char[] var4 = var3.toCharArray();
-
-				for(int var5 = 0; var5 < var4.length; ++var5) {
-					if(var4[var5] < 32 || var4[var5] > 127) {
-						this.kickCheat("Bad name!");
-						return;
-					}
+				PlayerInstance var11 = this.minecraft.getPlayerByName(username);
+				if(var11 != null) {
+					this.kick("Player with same nick already online.");
 				}
-
-				if(this.minecraft.verifyNames && !var8.equals(this.minecraft.mpPassCalculator.calcMPass(var3))) {
-					this.kick("Illegal name.");
+				logger.info(this + " logged in as " + username);
+				if(protocol != 6) {
+					this.kick("Wrong protocol version.");
+				} else if(this.minecraft.banned.containsPlayer(username)) {
+					this.kick("You\'re banned!");
 				} else {
-					PlayerInstance var11 = this.minecraft.getPlayerByName(var3);
-					if(var11 != null) {
-						this.kick("Player with same nick already online.");
-					}
-
-					logger.info(this + " logged in as " + var3);
-					if(var6 != 6) {
-						this.kick("Wrong protocol version.");
-					} else if(this.minecraft.banned.containsPlayer(var3)) {
-						this.kick("You\'re banned!");
-					} else {
-						this.onlyIP = true;
-						this.name = var3;
-						this.connection.sendPacket(Packet.LOGIN, new Object[]{Byte.valueOf((byte)6), this.minecraft.serverName, this.minecraft.motd, Integer.valueOf(this.minecraft.admins.containsPlayer(var3) ? 100 : 0)});
-						Level var9 = this.minecraft.level;
-						byte[] var10 = var9.copyBlocks();
-						(new MonitorBlocksThread(this, var10)).start();
-						this.minecraft.players.addPlayer(var3);
-					}
+					this.onlyIP = true;
+					this.name = username;
+					this.connection.sendPacket(Packet.LOGIN, new Object[]{Byte.valueOf((byte)6), this.minecraft.serverName, this.minecraft.motd, Integer.valueOf(this.minecraft.admins.containsPlayer(username) ? 100 : 0)});
+					byte[] levelData = this.minecraft.level.copyBlocks();
+					(new MonitorBlocksThread(this, levelData)).start();
+					this.minecraft.players.addPlayer(username);
 				}
+			}
+		}
+			
+		if(packet != Packet.TIMED_OUT && this.onlyIP && this.sendingPackets) {
+			if(packet == Packet.PLACE_OR_REMOVE_TILE) {
+				int x = ((Short)data[0]).intValue();
+				int y = ((Short)data[1]).intValue();
+				int z = ((Short)data[2]).intValue();
+				byte id = (byte) data[4];
+				EventSetTilePlayer event = new EventSetTilePlayer((short)x, (short)y, (short)z, id, this);
+				ClassicBukkit.pluginManager.fireSetTile(event);
+				
+				if(event.isCancelled()) {
+					ClassicBukkit.getServer().setTile(x, y, z);
+					return;
+				}
+
+				data[0] = event.getX();
+				data[1] = event.getY();
+				data[2] = event.getZ();
+				data[4] = event.getId();
+
+				if(this.placedBlocks.size() > 1200) {
+					this.kickCheat("Too much lag");
+				} else {
+					this.placedBlocks.add(data);
+				}
+			} else if(packet == Packet.CHAT_MESSAGE) {
+				String msg = data[1].toString().trim();
+				if(msg.length() > 0) {
+					this.chatMessage(msg);
+				}
+
+			} else if(packet == Packet.PLAYER_TELEPORT) {
+				if(this.placedBlocks.size() > 1200) {
+					this.kickCheat("Too much lag");
+					return;
+				}
+				this.placedBlocks.add(data);
 			}
 		}
 	}
 
-	private void chatMessage(String var1) {
-		var1 = var1.trim();
+	private void chatMessage(String msg) {
+		msg = msg.trim();
 
-		EventChatMessage event = new EventChatMessage(var1, this);
+		EventChatMessage event = new EventChatMessage(msg, this);
 		ClassicBukkit.pluginManager.fireChatMessage(event);
 
 		if(event.isCancelled()) {
 			return;
 		}
 
-		this.chatCounter += var1.length() + 15 << 2;
+		this.chatCounter += msg.length() + 15 << 2;
 		if(this.chatCounter > 600) {
 			this.chatCounter = 760;
 			this.sendPacket(Packet.CHAT_MESSAGE, new Object[]{Integer.valueOf(-1), "Too much chatter! Muted for eight seconds."});
 			logger.info("Muting " + this.name + " for chatting too much");
 		} else {
-			char[] var2 = var1.toCharArray();
+			char[] var2 = msg.toCharArray();
 
 			for(int var3 = 0; var3 < var2.length; ++var3) {
 				if(var2[var3] < 32 || var2[var3] > 127) {
@@ -173,19 +162,19 @@ public final class PlayerInstance {
 				}
 			}
 
-			if(var1.startsWith("/")) {
-				String[] parts = var1.split(" ");
+			if(msg.startsWith("/")) {
+				String[] parts = msg.split(" ");
 				ClassicBukkit.commandManager.executeCommand(parts[0].substring(1), parts.length > 1 ? Arrays.copyOfRange(parts, 1, parts.length) : new String[] {}, this);
 			} else {
-				logger.info(this.name + " says: " + var1);
-				this.minecraft.sendPacket(Packet.CHAT_MESSAGE, new Object[]{Integer.valueOf(this.playerID), this.name + ": " + var1});
+				logger.info(this.name + " says: " + msg);
+				this.minecraft.sendPacket(Packet.CHAT_MESSAGE, new Object[]{Integer.valueOf(this.playerID), this.name + ": " + msg});
 			}
 		}
 	}
 
-	public final void kick(String var1) {
-		this.connection.sendPacket(Packet.KICK_PLAYER, new Object[]{var1});
-		logger.info("Kicking " + this + ": " + var1);
+	public final void kick(String msg) {
+		this.connection.sendPacket(Packet.KICK_PLAYER, new Object[]{msg});
+		logger.info("Kicking " + this + ": " + msg);
 		this.minecraft.addTimer(this);
 		this.ignorePackets = true;
 	}
@@ -198,8 +187,8 @@ public final class PlayerInstance {
 		this.sendPacket(Packet.CHAT_MESSAGE, new Object[]{0, var1});
 	}
 
-	public final void setBlocks(byte[] var1) {
-		this.blocks = var1;
+	public final void setBlocks(byte[] blocks) {
+		this.blocks = blocks;
 	}
 
 	public final void handlePackets() {

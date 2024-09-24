@@ -27,8 +27,8 @@ public class Level implements Serializable {
 	private transient int[] heightMap;
 	private transient Random random = new Random();
 	private transient int randValue = this.random.nextInt();
-	private transient ArrayList tickList = new ArrayList();
-	public ArrayList entities = new ArrayList();
+	private transient ArrayList<Coord> tickList = new ArrayList<Coord>();
+	public ArrayList<Entity> entities = new ArrayList<Entity>();
 	private boolean networkMode = false;
 	int unprocessed = 0;
 	private int tickCount = 0;
@@ -43,9 +43,9 @@ public class Level implements Serializable {
 			this.calcLightDepths(0, 0, this.width, this.height);
 			this.random = new Random();
 			this.randValue = this.random.nextInt();
-			this.tickList = new ArrayList();
+			this.tickList = new ArrayList<Coord>();
 			if(this.entities == null) {
-				this.entities = new ArrayList();
+				this.entities = new ArrayList<Entity>();
 			}
 
 			if(this.xSpawn == 0 && this.ySpawn == 0 && this.zSpawn == 0) {
@@ -134,23 +134,23 @@ public class Level implements Serializable {
 		return var4 == null ? false : var4.blocksLight();
 	}
 
-	public ArrayList getCubes(AABB var1) {
-		ArrayList var2 = new ArrayList();
-		int var3 = (int)var1.x0;
-		int var4 = (int)var1.x1 + 1;
-		int var5 = (int)var1.y0;
-		int var6 = (int)var1.y1 + 1;
-		int var7 = (int)var1.z0;
-		int var8 = (int)var1.z1 + 1;
-		if(var1.x0 < 0.0F) {
+	public ArrayList<AABB> getCubes(AABB var1) {
+		ArrayList<AABB> var2 = new ArrayList<>();
+		int var3 = (int)var1.minX;
+		int var4 = (int)var1.maxX + 1;
+		int var5 = (int)var1.minY;
+		int var6 = (int)var1.maxY + 1;
+		int var7 = (int)var1.minZ;
+		int var8 = (int)var1.maxZ + 1;
+		if(var1.minX < 0.0F) {
 			--var3;
 		}
 
-		if(var1.y0 < 0.0F) {
+		if(var1.minY < 0.0F) {
 			--var5;
 		}
 
-		if(var1.z0 < 0.0F) {
+		if(var1.minZ < 0.0F) {
 			--var7;
 		}
 
@@ -278,12 +278,14 @@ public class Level implements Serializable {
 		}
 	}
 
-	public boolean isLit(int var1, int var2, int var3) {
-		return var1 >= 0 && var2 >= 0 && var3 >= 0 && var1 < this.width && var2 < this.depth && var3 < this.height ? var2 >= this.heightMap[var1 + var3 * this.width] : true;
+	public boolean isLit(int x, int y, int z) {
+		if(x >= 0 && y >= 0 && z >= 0 && x < this.width && y < this.depth && z < this.height) return y >= this.heightMap[x + z * this.width];
+		return true;
 	}
 
-	public int getTile(int var1, int var2, int var3) {
-		return var1 >= 0 && var2 >= 0 && var3 >= 0 && var1 < this.width && var2 < this.depth && var3 < this.height ? this.blocks[(var2 * this.height + var3) * this.width + var1] & 255 : 0;
+	public int getTile(int x, int y, int z) {
+		if(x >= 0 && y >= 0 && z >= 0 && x < this.width && y < this.depth && z < this.height) return this.blocks[(y * this.height + z) * this.width + x] & 255;
+		return 0;
 	}
 
 	public boolean isSolidTile(int var1, int var2, int var3) {
@@ -292,13 +294,12 @@ public class Level implements Serializable {
 	}
 
 	public void tickEntities() {
-		for(int var1 = 0; var1 < this.entities.size(); ++var1) {
-			((Entity)this.entities.get(var1)).tick();
-			if(((Entity)this.entities.get(var1)).removed) {
-				this.entities.remove(var1--);
-			}
+		
+		for(int i = 0; i < this.entities.size(); ++i) {
+			Entity e = this.entities.get(i);
+			e.tick();
+			if(e.removed) this.entities.remove(i--);
 		}
-
 	}
 
 	public void tick() {
@@ -313,16 +314,16 @@ public class Level implements Serializable {
 			++var2;
 		}
 
-		int var3 = this.height - 1;
-		int var4 = this.width - 1;
-		int var5 = this.depth - 1;
-		int var6;
-		int var7;
-		if(this.tickCount % 5 == 0) {
-			var6 = this.tickList.size();
+		int maxZ = this.height - 1;
+		int maxX = this.width - 1;
+		int maxY = this.depth - 1;
+		int tickCount;
 
-			for(var7 = 0; var7 < var6; ++var7) {
-				Coord var8 = (Coord)this.tickList.remove(0);
+		if(this.tickCount % 5 == 0) {
+			tickCount = this.tickList.size();
+
+			for(int i = 0; i < tickCount; ++i) { //scheduled ticking
+				Coord var8 = this.tickList.remove(0);
 				if(var8.scheduledTime > 0) {
 					--var8.scheduledTime;
 					this.tickList.add(var8);
@@ -336,18 +337,18 @@ public class Level implements Serializable {
 		}
 
 		this.unprocessed += this.width * this.height * this.depth;
-		var6 = this.unprocessed / 200;
-		this.unprocessed -= var6 * 200;
+		tickCount = this.unprocessed / 200;
+		this.unprocessed -= tickCount * 200;
 
-		for(var7 = 0; var7 < var6; ++var7) {
+		for(int i = 0; i < tickCount; ++i) { //random ticking
 			this.randValue = this.randValue * 3 + 1013904223;
-			int var12 = this.randValue >> 2;
-			int var13 = var12 & var4;
-			int var10 = var12 >> var1 & var3;
-			var12 = var12 >> var1 + var2 & var5;
-			byte var11 = this.blocks[(var12 * this.height + var10) * this.width + var13];
-			if(Tile.shouldTick[var11]) {
-				Tile.tiles[var11].tick(this, var13, var12, var10, this.random);
+			int y = this.randValue >> 2;
+			int x = y & maxX;
+			int z = y >> var1 & maxZ;
+			y = y >> var1 + var2 & maxY;
+			byte id = this.blocks[(y * this.height + z) * this.width + x];
+			if(Tile.shouldTick[id]) {
+				Tile.tiles[id].tick(this, x, y, z, this.random);
 			}
 		}
 
@@ -365,22 +366,22 @@ public class Level implements Serializable {
 		return (float)(this.depth / 2);
 	}
 
-	public boolean containsAnyLiquid(AABB var1) {
-		int var2 = (int)var1.x0;
-		int var3 = (int)var1.x1 + 1;
-		int var4 = (int)var1.y0;
-		int var5 = (int)var1.y1 + 1;
-		int var6 = (int)var1.z0;
-		int var7 = (int)var1.z1 + 1;
-		if(var1.x0 < 0.0F) {
+	public boolean containsAnyLiquid(AABB bb) {
+		int var2 = (int)bb.minX;
+		int var3 = (int)bb.maxX + 1;
+		int var4 = (int)bb.minY;
+		int var5 = (int)bb.maxY + 1;
+		int var6 = (int)bb.minZ;
+		int var7 = (int)bb.maxZ + 1;
+		if(bb.minX < 0.0F) {
 			--var2;
 		}
 
-		if(var1.y0 < 0.0F) {
+		if(bb.minY < 0.0F) {
 			--var4;
 		}
 
-		if(var1.z0 < 0.0F) {
+		if(bb.minZ < 0.0F) {
 			--var6;
 		}
 
@@ -423,21 +424,21 @@ public class Level implements Serializable {
 	}
 
 	public boolean containsLiquid(AABB var1, Liquid var2) {
-		int var3 = (int)var1.x0;
-		int var4 = (int)var1.x1 + 1;
-		int var5 = (int)var1.y0;
-		int var6 = (int)var1.y1 + 1;
-		int var7 = (int)var1.z0;
-		int var8 = (int)var1.z1 + 1;
-		if(var1.x0 < 0.0F) {
+		int var3 = (int)var1.minX;
+		int var4 = (int)var1.maxX + 1;
+		int var5 = (int)var1.minY;
+		int var6 = (int)var1.maxY + 1;
+		int var7 = (int)var1.minZ;
+		int var8 = (int)var1.maxZ + 1;
+		if(var1.minX < 0.0F) {
 			--var3;
 		}
 
-		if(var1.y0 < 0.0F) {
+		if(var1.minY < 0.0F) {
 			--var5;
 		}
 
-		if(var1.z0 < 0.0F) {
+		if(var1.minZ < 0.0F) {
 			--var7;
 		}
 
@@ -479,15 +480,15 @@ public class Level implements Serializable {
 		return false;
 	}
 
-	public void addToTickNextTick(int var1, int var2, int var3, int var4) {
+	public void addToTickNextTick(int x, int y, int z, int id) {
 		if(!this.networkMode) {
-			Coord var5 = new Coord(var1, var2, var3, var4);
-			if(var4 > 0) {
-				var3 = Tile.tiles[var4].getTickDelay();
-				var5.scheduledTime = var3;
+			Coord tickPos = new Coord(x, y, z, id);
+			if(id > 0) {
+				z = Tile.tiles[id].getTickDelay();
+				tickPos.scheduledTime = z;
 			}
 
-			this.tickList.add(var5);
+			this.tickList.add(tickPos);
 		}
 	}
 
@@ -636,8 +637,8 @@ public class Level implements Serializable {
 		return Arrays.copyOf(this.blocks, this.blocks.length);
 	}
 
-	public boolean isWater(int var1, int var2, int var3) {
-		int var4 = this.getTile(var1, var2, var3);
+	public boolean isWater(int x, int y, int z) {
+		int var4 = this.getTile(x, y, z);
 		return var4 > 0 && Tile.tiles[var4].getLiquidType() == Liquid.water;
 	}
 

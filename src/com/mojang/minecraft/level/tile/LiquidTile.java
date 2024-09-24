@@ -27,13 +27,8 @@ public class LiquidTile extends Tile {
 	}
 
 	public void tick(Level var1, int var2, int var3, int var4, Random var5) {
-		boolean var7 = false;
-		var4 = var4;
-		var3 = var3;
-		var2 = var2;
-		var1 = var1;
 		LiquidTile var8 = this;
-		boolean var9 = false;
+		boolean needsUpdate = false;
 
 		boolean var6;
 		do {
@@ -44,19 +39,19 @@ public class LiquidTile extends Tile {
 
 			var6 = var1.setTile(var2, var3, var4, var8.tileId);
 			if(var6) {
-				var9 = true;
+				needsUpdate = true;
 			}
 		} while(var6 && var8.liquid != Liquid.lava);
 
 		++var3;
-		if(var8.liquid == Liquid.water || !var9) {
-			var9 |= var8.checkWater(var1, var2 - 1, var3, var4);
-			var9 |= var8.checkWater(var1, var2 + 1, var3, var4);
-			var9 |= var8.checkWater(var1, var2, var3, var4 - 1);
-			var9 |= var8.checkWater(var1, var2, var3, var4 + 1);
+		if(var8.liquid == Liquid.water || !needsUpdate) {
+			needsUpdate |= var8.checkWater(var1, var2 - 1, var3, var4);
+			needsUpdate |= var8.checkWater(var1, var2 + 1, var3, var4);
+			needsUpdate |= var8.checkWater(var1, var2, var3, var4 - 1);
+			needsUpdate |= var8.checkWater(var1, var2, var3, var4 + 1);
 		}
 
-		if(!var9) {
+		if(!needsUpdate) {
 			var1.setTileNoUpdate(var2, var3, var4, var8.calmTileId);
 		} else {
 			var1.addToTickNextTick(var2, var3, var4, var8.tileId);

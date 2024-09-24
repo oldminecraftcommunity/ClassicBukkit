@@ -70,8 +70,8 @@ public class Tile {
 		tickSpeed[this.id] = 16;
 	}
 
-	public AABB getAABB(int var1, int var2, int var3) {
-		return new AABB((float)var1, (float)var2, (float)var3, (float)(var1 + 1), (float)(var2 + 1), (float)(var3 + 1));
+	public AABB getAABB(int x, int y, int z) {
+		return new AABB(x, y, z, x + 1, y + 1, z + 1);
 	}
 
 	public boolean blocksLight() {
