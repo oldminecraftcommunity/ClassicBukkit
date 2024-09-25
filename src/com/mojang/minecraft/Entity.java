@@ -123,7 +123,7 @@ public class Entity implements Serializable {
 
 	public boolean isFree(float var1, float var2, float var3) {
 		AABB var4 = this.bb.cloneMove(var1, var2, var3);
-		ArrayList var5 = this.level.getCubes(var4);
+		ArrayList<AABB> var5 = this.level.getCubes(var4);
 		return var5.size() > 0 ? false : !this.level.containsAnyLiquid(var4);
 	}
 
@@ -131,23 +131,23 @@ public class Entity implements Serializable {
 		float var4 = var1;
 		float var5 = var2;
 		float var6 = var3;
-		ArrayList var7 = this.level.getCubes(this.bb.expand(var1, var2, var3));
+		ArrayList<AABB> var7 = this.level.getCubes(this.bb.expand(var1, var2, var3));
 
 		int var8;
 		for(var8 = 0; var8 < var7.size(); ++var8) {
-			var2 = ((AABB)var7.get(var8)).clipYCollide(this.bb, var2);
+			var2 = var7.get(var8).clipYCollide(this.bb, var2);
 		}
 
 		this.bb.move(0.0F, var2, 0.0F);
 
 		for(var8 = 0; var8 < var7.size(); ++var8) {
-			var1 = ((AABB)var7.get(var8)).clipXCollide(this.bb, var1);
+			var1 = var7.get(var8).clipXCollide(this.bb, var1);
 		}
 
 		this.bb.move(var1, 0.0F, 0.0F);
 
 		for(var8 = 0; var8 < var7.size(); ++var8) {
-			var3 = ((AABB)var7.get(var8)).clipZCollide(this.bb, var3);
+			var3 = var7.get(var8).clipZCollide(this.bb, var3);
 		}
 
 		this.bb.move(0.0F, 0.0F, var3);
@@ -165,9 +165,9 @@ public class Entity implements Serializable {
 			this.zd = 0.0F;
 		}
 
-		this.x = (this.bb.x0 + this.bb.x1) / 2.0F;
-		this.y = this.bb.y0 + this.heightOffset;
-		this.z = (this.bb.z0 + this.bb.z1) / 2.0F;
+		this.x = (this.bb.minX + this.bb.maxX) / 2.0F;
+		this.y = this.bb.minY + this.heightOffset;
+		this.z = (this.bb.minZ + this.bb.maxZ) / 2.0F;
 	}
 
 	public boolean isInWater() {

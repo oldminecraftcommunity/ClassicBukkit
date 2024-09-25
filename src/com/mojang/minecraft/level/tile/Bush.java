@@ -10,10 +10,10 @@ public final class Bush extends Tile {
 		this.setTicking(true);
 	}
 
-	public final void tick(Level var1, int var2, int var3, int var4, Random var5) {
-		int var6 = var1.getTile(var2, var3 - 1, var4);
-		if(!var1.isLit(var2, var3, var4) || var6 != Tile.dirt.id && var6 != Tile.grass.id) {
-			var1.setTile(var2, var3, var4, 0);
+	public final void tick(Level level, int x, int y, int z, Random rand) {
+		int id = level.getTile(x, y - 1, z);
+		if(!level.isLit(x, y, z) || id != Tile.dirt.id && id != Tile.grass.id) {
+			level.setTile(x, y, z, 0);
 		}
 
 	}

@@ -6,6 +6,12 @@ import com.mojang.minecraft.level.Level;
 import com.mojang.minecraft.level.LevelIO;
 import com.mojang.minecraft.level.levelgen.LevelGen;
 import com.mojang.minecraft.net.Packet;
+import com.mojang.minecraft.net.packets.ChatMessagePacket;
+import com.mojang.minecraft.net.packets.KickPlayerPacket;
+import com.mojang.minecraft.net.packets.PlayerDisconnectPacket;
+import com.mojang.minecraft.net.packets.SetTilePacket;
+import com.mojang.minecraft.net.packets.TimedOutPacket;
+
 import met.realfreehij.classicbukkit.ClassicBukkit;
 
 import java.io.File;
@@ -33,9 +39,9 @@ public class MinecraftServer implements Runnable {
 	public static Logger logger = Logger.getLogger("MinecraftServer"); //public
 	static DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
 	private ConnectionList connectionList;
-	private Map playerInstancesMap = new HashMap();
-	private List playerList = new ArrayList();
-	private List sendTimers = new ArrayList();
+	private Map<SocketConnection, PlayerInstance> playerInstancesMap = new HashMap<>();
+	private List<PlayerInstance> playerList = new ArrayList<>();
+	private List<SendTimer> sendTimers = new ArrayList<>();
 	private int maxPlayers;
 	private Properties properties = new Properties();
 	public Level level;
@@ -102,17 +108,17 @@ public class MinecraftServer implements Runnable {
 	}
 
 	public final void disconnect(SocketConnection var1) {
-		PlayerInstance var2 = (PlayerInstance)this.playerInstancesMap.get(var1);
-		if(var2 != null) {
-			this.players.removePlayer(var2.name);
-			logger.info(var2 + " disconnected");
-			this.playerInstancesMap.remove(var2.connection);
-			this.playerList.remove(var2);
-			if(var2.playerID >= 0) {
-				this.playerInstances[var2.playerID] = null;
+		PlayerInstance player = this.playerInstancesMap.get(var1);
+		if(player != null) {
+			this.players.removePlayer(player.name);
+			logger.info(player + " disconnected");
+			this.playerInstancesMap.remove(player.connection);
+			this.playerList.remove(player);
+			if(player.playerID >= 0) {
+				this.playerInstances[player.playerID] = null;
 			}
 
-			this.sendPacket(Packet.PLAYER_DISCONNECT, new Object[]{Integer.valueOf(var2.playerID)});
+			this.sendPacket(new PlayerDisconnectPacket((byte)player.playerID));
 		}
 
 	}
@@ -129,24 +135,29 @@ public class MinecraftServer implements Runnable {
 		var0.connection.disconnect();
 	}
 
-	public final void sendPacket(Packet var1, Object... var2) {
-		for(int var3 = 0; var3 < this.playerList.size(); ++var3) {
+	public final void sendPacket(Packet pk) {
+		for(int i = 0; i < this.playerList.size(); ++i) {
 			try {
-				((PlayerInstance)this.playerList.get(var3)).sendPacket(var1, var2);
-			} catch (Exception var5) {
-				((PlayerInstance)this.playerList.get(var3)).handleException(var5);
+				this.playerList.get(i).sendPacket(pk);
+			} catch (Exception e) {
+				this.playerList.get(i).handleException(e);
 			}
 		}
 
 	}
-
-	public final void sendPlayerPacket(PlayerInstance var1, Packet var2, Object... var3) {
-		for(int var4 = 0; var4 < this.playerList.size(); ++var4) {
-			if(this.playerList.get(var4) != var1) {
+	/**
+	 * Sends packet to everyone except player
+	 * @param player
+	 * @param pk
+	 * @param args
+	 */
+	public final void sendPlayerPacket(PlayerInstance player, Packet pk) {
+		for(int i = 0; i < this.playerList.size(); ++i) {
+			if(this.playerList.get(i) != player) {
 				try {
-					((PlayerInstance)this.playerList.get(var4)).sendPacket(var2, var3);
-				} catch (Exception var6) {
-					((PlayerInstance)this.playerList.get(var4)).handleException(var6);
+					this.playerList.get(i).sendPacket(pk);
+				} catch (Exception e) {
+					this.playerList.get(i).handleException(e);
 				}
 			}
 		}
@@ -183,7 +194,7 @@ public class MinecraftServer implements Runnable {
 					}
 
 					if(var7 % 900 == 0) {
-						HashMap var9 = new HashMap();
+						HashMap<String, Object> var9 = new HashMap<>();
 						var9.put("name", this.serverName);
 						var9.put("users", Integer.valueOf(this.playerList.size()));
 						var9.put("max", Integer.valueOf(this.maxPlayers));
@@ -198,7 +209,7 @@ public class MinecraftServer implements Runnable {
 
 				while(System.nanoTime() - var3 > (long)var2) {
 					var3 += (long)var2;
-					this.sendPacket(Packet.TIMED_OUT, new Object[0]);
+					this.sendPacket(new TimedOutPacket());
 				}
 
 				Thread.sleep(5L);
@@ -209,7 +220,7 @@ public class MinecraftServer implements Runnable {
 		}
 	}
 
-	private static String assembleHeartbeat(Map var0) {
+	private static String assembleHeartbeat(Map<String, Object> var0) {
 		try {
 			String var1 = "";
 
@@ -298,61 +309,57 @@ public class MinecraftServer implements Runnable {
 
 			while(true) {
 				SocketChannel var14 = var13.serverSocketChannel.accept();
-				MinecraftServer var3;
+				MinecraftServer server;
 				if(var14 == null) {
 					for(int var17 = 0; var17 < var13.connectionList.size(); ++var17) {
-						SocketConnection var15 = (SocketConnection)var13.connectionList.get(var17);
+						SocketConnection con = var13.connectionList.get(var17);
 
 						try {
-							SocketConnection var18 = var15;
-							var15.socketChannel.read(var15.readBuffer);
+							con.socketChannel.read(con.readBuffer);
 							int var19 = 0;
 
-							while(var18.readBuffer.position() > 0 && var19++ != 100) {
-								var18.readBuffer.flip();
-								byte var20 = var18.readBuffer.get(0);
-								Packet var24 = Packet.PACKETS[var20];
-								if(var24 == null) {
+							while(con.readBuffer.position() > 0 && var19++ != 100) {
+								con.readBuffer.flip();
+								byte var20 = con.readBuffer.get(0);
+								Packet packet = Packet.create(var20);
+								if(packet == null) {
 									throw new IOException("Bad command: " + var20);
 								}
 
-								if(var18.readBuffer.remaining() < var24.size + 1) {
-									var18.readBuffer.compact();
+								if(con.readBuffer.remaining() < packet.size + 1) {
+									con.readBuffer.compact();
 									break;
 								}
 
-								var18.readBuffer.get();
-								Object[] var21 = new Object[var24.fields.length];
-
-								for(int var7 = 0; var7 < var21.length; ++var7) {
-									var21[var7] = var18.read(var24.fields[var7]);
-								}
-
-								var18.player.handlePackets(var24, var21);
-								if(!var18.connected) {
+								con.readBuffer.get(); //get pid
+								packet.read(con);
+								
+								con.player.handlePacket(packet);
+								
+								if(!con.connected) {
 									break;
 								}
 
-								var18.readBuffer.compact();
+								con.readBuffer.compact();
 							}
 
-							if(var18.writeBuffer.position() > 0) {
-								var18.writeBuffer.flip();
-								var18.socketChannel.write(var18.writeBuffer);
-								var18.writeBuffer.compact();
+							if(con.writeBuffer.position() > 0) {
+								con.writeBuffer.flip();
+								con.socketChannel.write(con.writeBuffer);
+								con.writeBuffer.compact();
 							}
 						} catch (Exception var9) {
-							var3 = var13.minecraft;
-							PlayerInstance var23 = (PlayerInstance)var3.playerInstancesMap.get(var15);
+							server = var13.minecraft;
+							PlayerInstance var23 = (PlayerInstance)server.playerInstancesMap.get(con);
 							if(var23 != null) {
 								var23.handleException(var9);
 							}
 						}
 
 						try {
-							if(!var15.connected) {
-								var15.disconnect();
-								var13.minecraft.disconnect(var15);
+							if(!con.connected) {
+								con.disconnect();
+								var13.minecraft.disconnect(con);
 								var13.connectionList.remove(var17--);
 							}
 						} catch (Exception var8) {
@@ -367,42 +374,39 @@ public class MinecraftServer implements Runnable {
 					var14.configureBlocking(false);
 					SocketConnection var2 = new SocketConnection(var14);
 					var13.connectionList.add(var2);
-					SocketConnection var4 = var2;
-					var3 = var13.minecraft;
-					if(var3.bannedIP.containsPlayer(var2.ip)) {
-						var2.sendPacket(Packet.KICK_PLAYER, new Object[]{"You\'re banned!"});
+					SocketConnection con = var2;
+					server = var13.minecraft;
+					if(server.bannedIP.containsPlayer(var2.ip)) {
+						var2.sendPacket(new KickPlayerPacket("You\'re banned!"));
 						logger.info(var2.ip + " tried to connect, but is banned.");
-						var3.addTimer(var2);
+						server.addTimer(var2);
 					} else {
 						int var5 = 0;
-						Iterator var6 = var3.playerList.iterator();
-
-						PlayerInstance var16;
-						while(var6.hasNext()) {
-							var16 = (PlayerInstance)var6.next();
-							var2 = var16.connection;
-							if(var2.ip.equals(var4.ip)) {
+						
+						for(PlayerInstance player : server.playerList) {
+							var2 = player.connection;
+							if(var2.ip.equals(con.ip)) {
 								++var5;
 							}
 						}
 
-						if(var5 >= var3.maxConnectCount) {
-							var4.sendPacket(Packet.KICK_PLAYER, new Object[]{"Too many connection!"});
-							logger.info(var4.ip + " tried to connect, but is already connected " + var5 + " times.");
-							var3.addTimer(var4);
+						if(var5 >= server.maxConnectCount) {
+							con.sendPacket(new KickPlayerPacket("Too many connection!"));
+							logger.info(con.ip + " tried to connect, but is already connected " + var5 + " times.");
+							server.addTimer(con);
 						} else {
-							int var22 = var3.freePlayerSlots();
-							if(var22 < 0) {
-								var4.sendPacket(Packet.KICK_PLAYER, new Object[]{"The server is full!"});
-								logger.info(var4.ip + " tried to connect, but failed because the server was full.");
-								var3.addTimer(var4);
+							int slot = server.freePlayerSlots();
+							if(slot < 0) {
+								con.sendPacket(new KickPlayerPacket("The server is full!"));
+								logger.info(con.ip + " tried to connect, but failed because the server was full.");
+								server.addTimer(con);
 							} else {
-								var16 = new PlayerInstance(var3, var4, var22);
-								logger.info(var16 + " connected");
-								var3.playerInstancesMap.put(var4, var16);
-								var3.playerList.add(var16);
-								if(var16.playerID >= 0) {
-									var3.playerInstances[var16.playerID] = var16;
+								PlayerInstance player = new PlayerInstance(server, con, slot);
+								logger.info(player + " connected");
+								server.playerInstancesMap.put(con, player);
+								server.playerList.add(player);
+								if(player.playerID >= 0) {
+									server.playerInstances[player.playerID] = player;
 								}
 							}
 						}
@@ -487,8 +491,8 @@ public class MinecraftServer implements Runnable {
 		}
 	}*/
 
-	public final void setTile(int var1, int var2, int var3) {
-		this.sendPacket(Packet.SET_TILE, new Object[]{Integer.valueOf(var1), Integer.valueOf(var2), Integer.valueOf(var3), Integer.valueOf(this.level.getTile(var1, var2, var3))});
+	public final void setTile(int x, int y, int z) {
+		this.sendPacket(new SetTilePacket((short)x, (short)y, (short)z, (byte)this.level.getTile(x, y, z)));
 	}
 
 	private int freePlayerSlots() {
@@ -501,7 +505,7 @@ public class MinecraftServer implements Runnable {
 		return -1;
 	}
 
-	public final List getPlayerList() {
+	public final List<PlayerInstance> getPlayerList() {
 		return this.playerList;
 	}
 
@@ -578,9 +582,7 @@ public class MinecraftServer implements Runnable {
 			SocketConnection var6;
 			do {
 				if(!var4.hasNext()) {
-					if(var2) {
-						this.sendPacket(Packet.CHAT_MESSAGE, new Object[]{Integer.valueOf(-1), var3 + " got ip banned!"});
-					}
+					if(var2) this.sendPacket(new ChatMessagePacket(var3 + " got ip banned!"));
 
 					return;
 				}
@@ -667,12 +669,12 @@ public class MinecraftServer implements Runnable {
 		return var0.playerList2;
 	}
 
-	static String b(MinecraftServer var0) {
-		return var0.serverURL;
+	static String getServerURL(MinecraftServer server) {
+		return server.serverURL;
 	}
 
-	static String a(MinecraftServer var0, String var1) {
-		return var0.serverURL = var1;
+	static String setServerURL(MinecraftServer server, String url) {
+		return server.serverURL = url;
 	}
 
 	static {

@@ -8,6 +8,6 @@ public final class SendTimer {
 
 	public SendTimer(SocketConnection var1, int var2) {
 		this.netHandler = var1;
-		this.timer = 100;
+		this.timer = 100; //XXX maybe meant to send var2?
 	}
 }

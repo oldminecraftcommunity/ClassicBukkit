@@ -5,10 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class User {
-	public static List creativeTiles;
+	public static List<Tile> creativeTiles = new ArrayList<Tile>();
 
 	static {
-		(creativeTiles = new ArrayList()).add(Tile.rock);
+		creativeTiles.add(Tile.rock);
 		creativeTiles.add(Tile.wood);
 		creativeTiles.add(Tile.dirt);
 		creativeTiles.add(Tile.stoneBrick);

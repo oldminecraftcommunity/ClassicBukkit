@@ -3,6 +3,7 @@ package com.mojang.comm;
 import com.mojang.minecraft.net.Packet;
 import com.mojang.minecraft.server.PlayerInstance;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -56,62 +57,10 @@ public final class SocketConnection {
 		this.socketChannel = null;
 	}
 
-	public final void sendPacket(Packet var1, Object... var2) {
+	public final void sendPacket(Packet packet) {
 		if(this.connected) {
-			this.writeBuffer.put(var1.id);
-
-			for(int var3 = 0; var3 < var2.length; ++var3) {
-				Class var10001 = var1.fields[var3];
-				Object var6 = var2[var3];
-				Class var5 = var10001;
-				SocketConnection var4 = this;
-				if(this.connected) {
-					try {
-						if(var5 == Long.TYPE) {
-							var4.writeBuffer.putLong(((Long)var6).longValue());
-						} else if(var5 == Integer.TYPE) {
-							var4.writeBuffer.putInt(((Number)var6).intValue());
-						} else if(var5 == Short.TYPE) {
-							var4.writeBuffer.putShort(((Number)var6).shortValue());
-						} else if(var5 == Byte.TYPE) {
-							var4.writeBuffer.put(((Number)var6).byteValue());
-						} else if(var5 == Double.TYPE) {
-							var4.writeBuffer.putDouble(((Double)var6).doubleValue());
-						} else if(var5 == Float.TYPE) {
-							var4.writeBuffer.putFloat(((Float)var6).floatValue());
-						} else {
-							byte[] var8;
-							if(var5 != String.class) {
-								if(var5 == byte[].class) {
-									var8 = (byte[])((byte[])var6);
-									if(var8.length < 1024) {
-										var8 = Arrays.copyOf(var8, 1024);
-									}
-
-									var4.writeBuffer.put(var8);
-								}
-							} else {
-								var8 = ((String)var6).getBytes("UTF-8");
-								Arrays.fill(var4.stringPacket, (byte)32);
-
-								int var9;
-								for(var9 = 0; var9 < 64 && var9 < var8.length; ++var9) {
-									var4.stringPacket[var9] = var8[var9];
-								}
-
-								for(var9 = var8.length; var9 < 64; ++var9) {
-									var4.stringPacket[var9] = 32;
-								}
-
-								var4.writeBuffer.put(var4.stringPacket);
-							}
-						}
-					} catch (Exception var7) {
-						this.player.handleException(var7);
-					}
-				}
-			}
-
+			this.writeBuffer.put((byte) packet.getPacketID().ordinal());
+			packet.write(this);
 		}
 	}
 
@@ -125,20 +74,17 @@ public final class SocketConnection {
 				} else if(var1 == Integer.TYPE) {
 					return Integer.valueOf(this.readBuffer.getInt());
 				} else if(var1 == Short.TYPE) {
-					return Short.valueOf(this.readBuffer.getShort());
+					return this.getShort();
 				} else if(var1 == Byte.TYPE) {
-					return Byte.valueOf(this.readBuffer.get());
+					return Byte.valueOf(this.getByte());
 				} else if(var1 == Double.TYPE) {
 					return Double.valueOf(this.readBuffer.getDouble());
 				} else if(var1 == Float.TYPE) {
 					return Float.valueOf(this.readBuffer.getFloat());
 				} else if(var1 == String.class) {
-					this.readBuffer.get(this.stringPacket);
-					return (new String(this.stringPacket, "UTF-8")).trim();
+					return this.getString();
 				} else if(var1 == byte[].class) {
-					byte[] var3 = new byte[1024];
-					this.readBuffer.get(var3);
-					return var3;
+					return this.getBytearray();
 				} else {
 					return null;
 				}
@@ -148,4 +94,64 @@ public final class SocketConnection {
 			}
 		}
 	}
+	public String getString() {
+		try {
+			this.readBuffer.get(this.stringPacket);
+			return (new String(this.stringPacket, "UTF-8")).trim();
+		}catch(UnsupportedEncodingException e) {
+			this.player.handleException(e);
+			return null;
+		}
+	}
+	public byte getByte() {
+		return this.readBuffer.get();
+	}
+
+	public void writeByte(byte b) {
+		this.writeBuffer.put(b);
+	}
+
+	public void writeString(String s) {
+		try {
+			byte[] str = s.getBytes("UTF-8");
+			Arrays.fill(this.stringPacket, (byte)32); //XXX might be useless
+	
+			int si;
+			for(si = 0; si < 64 && si < str.length; ++si) {
+				this.stringPacket[si] = str[si];
+			}
+	
+			for(si = str.length; si < 64; ++si) {
+				this.stringPacket[si] = 32;
+			}
+	
+			this.writeBuffer.put(this.stringPacket);
+		}catch(UnsupportedEncodingException e) {
+			this.player.handleException(e);
+		}
+	}
+
+	public byte[] getBytearray() {
+		byte[] var3 = new byte[1024];
+		this.readBuffer.get(var3);
+		return var3;
+	}
+
+	public short getShort() {
+		return this.readBuffer.getShort();
+	}
+
+	public void writeBytearray(byte[] data) {
+		if(data.length < 1024) {
+			data = Arrays.copyOf(data, 1024);
+		}
+
+		this.writeBuffer.put(data);
+	}
+
+	public void writeShort(short s) {
+		this.writeBuffer.putShort(s);
+	}
+	
+	
 }

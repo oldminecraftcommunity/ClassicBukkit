@@ -15,7 +15,7 @@ public final class PlayerList {
 	private static Logger logger = MinecraftServer.logger;
 	private String filename;
 	private File file;
-	private Set players = new HashSet();
+	private Set<String> players = new HashSet<>();
 
 	public PlayerList(String var1, File var2) {
 		this.filename = var1;
@@ -69,11 +69,9 @@ public final class PlayerList {
 	private void save() {
 		try {
 			PrintWriter var1 = new PrintWriter(new FileWriter(this.file));
-			Iterator var2 = this.players.iterator();
 
-			while(var2.hasNext()) {
-				String var3 = (String)var2.next();
-				var1.println(var3);
+			for(String s : this.players) {
+				var1.println(s);
 			}
 
 			var1.close();

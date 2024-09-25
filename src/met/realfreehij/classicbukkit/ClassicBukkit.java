@@ -20,7 +20,7 @@ public class ClassicBukkit {
         if(!pluginFolder.exists() || !pluginFolder.isDirectory()) {
             pluginFolder.mkdir();
         }
-        File[] files = pluginFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".jar"));
+        File[] files = pluginFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".jar")); //oh my cliff java 7
         for(File file : files) {
             pluginManager.loadPlugin(file);
         }
