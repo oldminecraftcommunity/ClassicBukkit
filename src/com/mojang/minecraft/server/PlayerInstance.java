@@ -110,7 +110,6 @@ public final class PlayerInstance {
 					this.connection.sendPacket(new LoginPacket(PROTOCOL_VERSION, this.minecraft.serverName, this.minecraft.motd, this.minecraft.admins.containsPlayer(username) ? 100 : 0));
 					byte[] levelData = this.minecraft.level.copyBlocks();
 					(new MonitorBlocksThread(this, levelData)).start();
-					this.minecraft.players.addPlayer(username);
 				}
 			}
 		}
