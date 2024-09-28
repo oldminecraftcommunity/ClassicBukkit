@@ -200,8 +200,13 @@ public final class PlayerInstance {
 		this.kick("Cheat detected: " + var1);
 	}
 
-	public final void sendChatMessage(String var1) {
-		this.sendPacket(new ChatMessagePacket(0, var1));
+	public final void sendChatMessage(String msg) {
+		
+		while(msg.length() > 64) {
+			this.sendPacket(new ChatMessagePacket(0, msg.substring(0, 64)));
+			msg = msg.substring(64);
+		}
+		if(msg.length() > 0) this.sendPacket(new ChatMessagePacket(0, msg));
 	}
 
 	public final void setBlocks(byte[] blocks) {
@@ -361,6 +366,7 @@ public final class PlayerInstance {
 					((byte)(var11.rotSpawn * 256.0F / 360.0F)), (byte)0
 				)
 			);
+			
 			this.minecraft.sendPacket(new ChatMessagePacket(this.name + " joined the game"));
 			ClassicBukkit.pluginManager.firePlayerJoin(new EventPlayerJoin(this));
 			Iterator var20 = this.minecraft.getPlayerList().iterator();
