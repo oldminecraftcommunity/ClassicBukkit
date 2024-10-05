@@ -110,7 +110,6 @@ public final class PlayerInstance {
 					this.connection.sendPacket(new LoginPacket(PROTOCOL_VERSION, this.minecraft.serverName, this.minecraft.motd, this.minecraft.admins.containsPlayer(username) ? 100 : 0));
 					byte[] levelData = this.minecraft.level.copyBlocks();
 					(new MonitorBlocksThread(this, levelData)).start();
-					this.minecraft.players.addPlayer(username);
 				}
 			}
 		}
@@ -201,8 +200,13 @@ public final class PlayerInstance {
 		this.kick("Cheat detected: " + var1);
 	}
 
-	public final void sendChatMessage(String var1) {
-		this.sendPacket(new ChatMessagePacket(0, var1));
+	public final void sendChatMessage(String msg) {
+		
+		while(msg.length() > 64) {
+			this.sendPacket(new ChatMessagePacket(0, msg.substring(0, 64)));
+			msg = msg.substring(64);
+		}
+		if(msg.length() > 0) this.sendPacket(new ChatMessagePacket(0, msg));
 	}
 
 	public final void setBlocks(byte[] blocks) {
@@ -221,135 +225,113 @@ public final class PlayerInstance {
 				this.chatCounter = 300;
 			}
 		}
-
-		PosData var2;
-		boolean var26 = true; //XXX AAA
-		if(this.positionData.size() > 0) {
-			for(boolean var1 = true; this.positionData.size() > 0 && var1; var1 = var26) {
-				var2 = this.positionData.remove(0);
-				short var3;
-				short var4;
-				byte var5;
-				byte var6;
-				short var13;
-				short var10001;
-				short var10002;
-				short var10003;
-				byte var10004;
-				if(var2 instanceof BlockData) { //posdata
-					var10001 = var2.x;
-					var10002 = var2.y;
-					var10003 = var2.z;
-					var10004 = ((BlockData) var2).action; //action
-					var6 = ((BlockData) var2).id;
-					var5 = var10004;
-					var4 = var10003;
-					var3 = var10002;
-					var13 = var10001;
-					++this.packetHandlingCounter;
-					if(this.packetHandlingCounter == 100) {
-						this.kickCheat("Too much clicking!");
+		boolean var1 = true;
+		while(this.positionData.size() > 0 && var1) {
+			PosData posData = this.positionData.remove(0);
+			short x = posData.x;
+			short y = posData.y;
+			short z = posData.z;
+			
+			if(posData instanceof BlockData) { //posdata
+				byte id = ((BlockData) posData).id;
+				byte action = ((BlockData) posData).action;
+				++this.packetHandlingCounter;
+				if(this.packetHandlingCounter == 100) {
+					this.kickCheat("Too much clicking!");
+				} else {
+					Level level = this.minecraft.level;
+					float xdiff = (float)x - (float)this.x / 32.0F;
+					float ydiff = (float)y - ((float)this.y / 32.0F - 1.62F);
+					float zdiff = (float)z - (float)this.z / 32.0F;
+					float distance = xdiff * xdiff + ydiff * ydiff + zdiff * zdiff;
+					float reachDistance = 8.0f;
+					if(distance >= reachDistance*reachDistance) {
+						System.out.println("Distance: " + Math.sqrt(distance));
+						this.kickCheat("Distance");
 					} else {
-						Level var21 = this.minecraft.level;
-						float var22 = (float)var13 - (float)this.x / 32.0F;
-						float var24 = (float)var3 - ((float)this.y / 32.0F - 1.62F);
-						float var25 = (float)var4 - (float)this.z / 32.0F;
-						var22 = var22 * var22 + var24 * var24 + var25 * var25;
-						var24 = 8.0F;
-						if(var22 >= var24 * var24) {
-							System.out.println("Distance: " + Math.sqrt((double)var22));
-							this.kickCheat("Distance");
-						} else {
-							boolean var23 = User.creativeTiles.contains(Tile.tiles[var6]);
-							if(!var23) {
-								this.kickCheat("Tile type");
-							} else if(var13 >= 0 && var3 >= 0 && var4 >= 0 && var13 < var21.width && var3 < var21.depth && var4 < var21.height) {
-								if(var5 == 0) {
-									if(var21.getTile(var13, var3, var4) != Tile.unbreakable.id || this.minecraft.admins.containsPlayer(this.name)) {
-										var21.setTile(var13, var3, var4, 0);
+						if(!User.creativeTiles.contains(Tile.tiles[id])) {
+							this.kickCheat("Tile type");
+						} else if(x >= 0 && y >= 0 && z >= 0 && x < level.width && y < level.depth && z < level.height) {
+							if(action == 0) {
+								if(level.getTile(x, y, z) != Tile.unbreakable.id || this.minecraft.admins.containsPlayer(this.name)) {
+									level.setTile(x, y, z, 0);
+								}
+							} else {
+								Tile tile = Tile.tiles[level.getTile(x, y, z)];
+								if(tile == null || tile == Tile.water || tile == Tile.calmWater || tile == Tile.lava || tile == Tile.calmLava) {
+									if(this.placeUnbreakable && id == Tile.rock.id) {
+										level.setTile(x, y, z, Tile.unbreakable.id);
+									} else {
+										level.setTile(x, y, z, id);
 									}
-								} else {
-									Tile var18 = Tile.tiles[var21.getTile(var13, var3, var4)];
-									if(var18 == null || var18 == Tile.water || var18 == Tile.calmWater || var18 == Tile.lava || var18 == Tile.calmLava) {
-										if(this.placeUnbreakable && var6 == Tile.rock.id) {
-											var21.setTile(var13, var3, var4, Tile.unbreakable.id);
-										} else {
-											var21.setTile(var13, var3, var4, var6);
-										}
 
-										Tile.tiles[var6].onBlockAdded(var21, var13, var3, var4);
-									}
+									Tile.tiles[id].onBlockAdded(level, x, y, z);
 								}
 							}
 						}
 					}
+				}
 
-					var26 = true;
-				} else if(var2 instanceof MoveData) { //movedata
-					var10001 = var2.x;
-					var10002 = var2.y;
-					var10003 = var2.z;
-					var10004 = ((MoveData) var2).yaw;
-					var6 = ((MoveData) var2).pitch;
-					var5 = var10004;
-					var4 = var10003;
-					var3 = var10002;
-					var13 = var10001;
+				var1 = true;
+			} else if(posData instanceof MoveData) { //movedata
+				byte var6 = ((MoveData) posData).pitch;
+				byte var5 = ((MoveData) posData).yaw;
+				z = posData.z;
+				y = posData.y;
+				x = posData.x;
 
-					EventPlayerMovement event = new EventPlayerMovement(this);
-					ClassicBukkit.pluginManager.firePlayerMovement(event);
+				EventPlayerMovement event = new EventPlayerMovement(this);
+				ClassicBukkit.pluginManager.firePlayerMovement(event);
 
-					if(event.isCancelled()) {
-						this.teleport(this.x/32, this.y/32, this.z/32, this.yaw, this.pitch);
-						return;
-					}
+				if(event.isCancelled()) {
+					this.teleport(this.x/32, this.y/32, this.z/32, this.yaw, this.pitch);
+					return;
+				}
 
-					if(var13 == this.x && var3 == this.y && var4 == this.z && var5 == this.yaw && var6 == this.pitch) {
-						var26 = true;
-					} else {
-						boolean var7 = var13 == this.x && var3 == this.y && var4 == this.z;
-						if(this.ticks++ % 2 == 0) {
-							int var8 = var13 - this.x;
-							int var9 = var3 - this.y;
-							int var10 = var4 - this.z;
-							if(var8 >= 128 || var8 < -128 || var9 >= 128 || var9 < -128 || var10 >= 128 || var10 < -128 || this.ticks % 20 <= 1) {
-								this.x = var13;
-								this.y = var3;
-								this.z = var4;
-								this.yaw = var5;
-								this.pitch = var6;
-								
-								this.minecraft.sendPlayerPacket(this, new PlayerTeleportPacket((byte)this.playerID, var13, var3, var4, var5, var6));
-								var26 = false;
-								continue;
-							}
-
-							if(var13 == this.x && var3 == this.y && var4 == this.z) {
-								this.yaw = var5;
-								this.pitch = var6;
-								this.minecraft.sendPlayerPacket(this, new PlayerRotatePacket((byte)this.playerID, var5, var6));
-							} else if(var5 == this.yaw && var6 == this.pitch) {
-								this.x = var13;
-								this.y = var3;
-								this.z = var4;
-								this.minecraft.sendPlayerPacket(this, new PlayerMovePacket((byte)this.playerID, (byte)var8, (byte)var9, (byte)var10));
-							} else {
-								this.x = var13;
-								this.y = var3;
-								this.z = var4;
-								this.yaw = var5;
-								this.pitch = var6;
-								this.minecraft.sendPlayerPacket(this, new PlayerMoveAndRotatePacket(
-										(byte)this.playerID,
-										(byte)var8, (byte)var9, (byte)var10,
-										var5, var6
-								));
-								//{Integer.valueOf(this.playerID), Integer.valueOf(var8), Integer.valueOf(var9), Integer.valueOf(var10), Byte.valueOf(var5), Byte.valueOf(var6)});
-							}
+				if(x == this.x && y == this.y && z == this.z && var5 == this.yaw && var6 == this.pitch) {
+					var1 = true;
+				} else {
+					boolean var7 = x == this.x && y == this.y && z == this.z;
+					if(this.ticks++ % 2 == 0) {
+						int xdiff = x - this.x;
+						int ydiff = y - this.y;
+						int zdiff = z - this.z;
+						if(xdiff >= 128 || xdiff < -128 || ydiff >= 128 || ydiff < -128 || zdiff >= 128 || zdiff < -128 || this.ticks % 20 <= 1) {
+							this.x = x;
+							this.y = y;
+							this.z = z;
+							this.yaw = var5;
+							this.pitch = var6;
+							
+							this.minecraft.sendPlayerPacket(this, new PlayerTeleportPacket((byte)this.playerID, x, y, z, var5, var6));
+							var1 = false;
+							continue;
 						}
 
-						var26 = var7;
+						if(x == this.x && y == this.y && z == this.z) {
+							this.yaw = var5;
+							this.pitch = var6;
+							this.minecraft.sendPlayerPacket(this, new PlayerRotatePacket((byte)this.playerID, var5, var6));
+						} else if(var5 == this.yaw && var6 == this.pitch) {
+							this.x = x;
+							this.y = y;
+							this.z = z;
+							this.minecraft.sendPlayerPacket(this, new PlayerMovePacket((byte)this.playerID, (byte)xdiff, (byte)ydiff, (byte)zdiff));
+						} else {
+							this.x = x;
+							this.y = y;
+							this.z = z;
+							this.yaw = var5;
+							this.pitch = var6;
+							this.minecraft.sendPlayerPacket(this, new PlayerMoveAndRotatePacket(
+									(byte)this.playerID,
+									(byte)xdiff, (byte)ydiff, (byte)zdiff,
+									var5, var6
+							));
+						}
 					}
+
+					var1 = var7;
 				}
 			}
 		}
@@ -384,6 +366,7 @@ public final class PlayerInstance {
 					((byte)(var11.rotSpawn * 256.0F / 360.0F)), (byte)0
 				)
 			);
+			
 			this.minecraft.sendPacket(new ChatMessagePacket(this.name + " joined the game"));
 			ClassicBukkit.pluginManager.firePlayerJoin(new EventPlayerJoin(this));
 			Iterator var20 = this.minecraft.getPlayerList().iterator();

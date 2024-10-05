@@ -53,7 +53,6 @@ public class MinecraftServer implements Runnable {
 	public PlayerList admins = new PlayerList("Admins", new File("admins.txt"));
 	public PlayerList banned = new PlayerList("Banned", new File("banned.txt"));
 	private PlayerList bannedIP = new PlayerList("Banned (IP)", new File("banned-ip.txt"));
-	public PlayerList players = new PlayerList("Players", new File("players.txt"));
 	private List playerList2 = new ArrayList();
 	private String salt = "" + (new Random()).nextLong();
 	private String serverURL = "";
@@ -110,7 +109,6 @@ public class MinecraftServer implements Runnable {
 	public final void disconnect(SocketConnection var1) {
 		PlayerInstance player = this.playerInstancesMap.get(var1);
 		if(player != null) {
-			this.players.removePlayer(player.name);
 			logger.info(player + " disconnected");
 			this.playerInstancesMap.remove(player.connection);
 			this.playerList.remove(player);
