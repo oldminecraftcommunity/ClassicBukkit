@@ -14,6 +14,7 @@ import com.mojang.minecraft.net.packets.TimedOutPacket;
 
 import met.realfreehij.classicbukkit.ClassicBukkit;
 import met.realfreehij.classicbukkit.commands.CommandIssuer;
+import met.realfreehij.classicbukkit.utils.ChatColor;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -714,6 +715,7 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 
 	@Override
 	public void sendChatMessage(String s) {
-		logger.info("[CMD] "+s);
+		s = ChatColor.stringToANSI(s);
+		System.out.println("[CMD] "+s+ChatColor.ANSI_RESET);
 	}
 }
