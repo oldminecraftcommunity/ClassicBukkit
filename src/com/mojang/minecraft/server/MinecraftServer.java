@@ -15,6 +15,7 @@ import com.mojang.minecraft.net.packets.TimedOutPacket;
 import met.realfreehij.classicbukkit.ClassicBukkit;
 import met.realfreehij.classicbukkit.commands.CommandIssuer;
 import met.realfreehij.classicbukkit.utils.ChatColor;
+import org.fusesource.jansi.AnsiConsole;
 
 import java.io.*;
 import java.net.URLEncoder;
@@ -59,6 +60,7 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 	private int maxConnectCount;
 
 	public MinecraftServer() throws IOException {
+		AnsiConsole.systemInstall();
 		try {
 			this.properties.load(new FileReader("server.properties"));
 		} catch (Exception var3) {
@@ -722,6 +724,7 @@ public class MinecraftServer implements Runnable, CommandIssuer{
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
+		AnsiConsole.systemUninstall();
 		System.exit(0);
     }
 }
