@@ -14,12 +14,12 @@ final class ConsoleInput extends Thread {
 		this.minecraft = var1;
 	}
 
-	public final void run() {
+	public void run() {
 		try {
 			BufferedReader var1 = new BufferedReader(new InputStreamReader(System.in));
 			String s = null;
 
-			while(true) {
+			while (true) {
 				s = var1.readLine();
 				if(s == null) {
 					MinecraftServer.logger.warning("stdin: end of file! No more direct console input is possible.");
@@ -27,7 +27,7 @@ final class ConsoleInput extends Thread {
 				}
 
 				List<String> var3 = MinecraftServer.getConsoleCommands(this.minecraft);
-				synchronized(var3) {
+				synchronized (var3) {
 					MinecraftServer.getConsoleCommands(this.minecraft).add(s);
 				}
 			}
