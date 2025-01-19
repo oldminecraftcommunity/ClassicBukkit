@@ -9,19 +9,19 @@ public final class ImprovedNoise extends Synth {
 		this(new Random());
 	}
 
-	public ImprovedNoise(Random var1) {
+	public ImprovedNoise(Random rand) {
 		this.p = new int[512];
 
-		int var2;
-		for(var2 = 0; var2 < 256; this.p[var2] = var2++) {
+		for(int i = 0; i < 256; ++i) {
+			this.p[i] = i;
 		}
 
-		for(var2 = 0; var2 < 256; ++var2) {
-			int var3 = var1.nextInt(256 - var2) + var2;
-			int var4 = this.p[var2];
-			this.p[var2] = this.p[var3];
+		for(int i = 0; i < 256; ++i) {
+			int var3 = rand.nextInt(256 - i) + i;
+			int var4 = this.p[i];
+			this.p[i] = this.p[var3];
 			this.p[var3] = var4;
-			this.p[var2 + 256] = this.p[var2];
+			this.p[i + 256] = this.p[i];
 		}
 
 	}
@@ -41,12 +41,12 @@ public final class ImprovedNoise extends Synth {
 		return ((var0 & 1) == 0 ? var8 : -var8) + ((var0 & 2) == 0 ? var10 : -var10);
 	}
 
-	public final double getValue(double var1, double var3) {
+	public final double getValue(double x, double y) {
 		double var10 = 0.0D;
-		double var8 = var3;
-		double var6 = var1;
-		int var21 = (int)Math.floor(var1) & 255;
-		int var2 = (int)Math.floor(var3) & 255;
+		double var8 = y;
+		double var6 = x;
+		int var21 = (int)Math.floor(x) & 255;
+		int var2 = (int)Math.floor(y) & 255;
 		int var22 = (int)Math.floor(0.0D) & 255;
 		var6 -= Math.floor(var6);
 		var8 -= Math.floor(var8);

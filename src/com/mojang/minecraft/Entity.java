@@ -1,9 +1,7 @@
 package com.mojang.minecraft;
 
-import com.mojang.minecraft.gui.Interface;
 import com.mojang.minecraft.level.Level;
 import com.mojang.minecraft.level.liquid.Liquid;
-import com.mojang.minecraft.net.Empty;
 import com.mojang.minecraft.phys.AABB;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -32,8 +30,8 @@ public class Entity implements Serializable {
 	protected float bbWidth = 0.6F;
 	protected float bbHeight = 1.8F;
 
-	public Entity(Level var1) {
-		this.level = var1;
+	public Entity(Level level) {
+		this.level = level;
 		this.setPos(0.0F, 0.0F, 0.0F);
 	}
 
@@ -64,7 +62,7 @@ public class Entity implements Serializable {
 		this.bbHeight = var2;
 	}
 
-	protected void setPos(Empty var1) {
+	protected void setPos() {
 		this.setPos(this.x, this.y, this.z);
 		this.setRot(this.yRot, this.xRot);
 	}
@@ -74,13 +72,13 @@ public class Entity implements Serializable {
 		this.xRot = var2;
 	}
 
-	protected void setPos(float var1, float var2, float var3) {
-		this.x = var1;
-		this.y = var2;
-		this.z = var3;
-		float var4 = this.bbWidth / 2.0F;
-		float var5 = this.bbHeight / 2.0F;
-		this.bb = new AABB(var1 - var4, var2 - var5, var3 - var4, var1 + var4, var2 + var5, var3 + var4);
+	protected void setPos(float x, float y, float z) {
+		this.x = x;
+		this.y = y;
+		this.z = z;
+		float width = this.bbWidth / 2.0F;
+		float height = this.bbHeight / 2.0F;
+		this.bb = new AABB(x - width, y - height, z - width, x + width, y + height, z + width);
 	}
 
 	public void turn(float var1, float var2) {
@@ -127,41 +125,41 @@ public class Entity implements Serializable {
 		return var5.size() > 0 ? false : !this.level.containsAnyLiquid(var4);
 	}
 
-	public void move(float var1, float var2, float var3) {
-		float var4 = var1;
-		float var5 = var2;
-		float var6 = var3;
-		ArrayList<AABB> var7 = this.level.getCubes(this.bb.expand(var1, var2, var3));
+	public void move(float mx, float my, float mz) {
+		float savedMotX = mx;
+		float savedMotY = my;
+		float savedMotZ = mz;
+		ArrayList<AABB> collidingWith = this.level.getCubes(this.bb.expand(mx, my, mz));
 
 		int var8;
-		for(var8 = 0; var8 < var7.size(); ++var8) {
-			var2 = var7.get(var8).clipYCollide(this.bb, var2);
+		for(var8 = 0; var8 < collidingWith.size(); ++var8) {
+			my = collidingWith.get(var8).clipYCollide(this.bb, my);
 		}
 
-		this.bb.move(0.0F, var2, 0.0F);
+		this.bb.move(0.0F, my, 0.0F);
 
-		for(var8 = 0; var8 < var7.size(); ++var8) {
-			var1 = var7.get(var8).clipXCollide(this.bb, var1);
+		for(var8 = 0; var8 < collidingWith.size(); ++var8) {
+			mx = collidingWith.get(var8).clipXCollide(this.bb, mx);
 		}
 
-		this.bb.move(var1, 0.0F, 0.0F);
+		this.bb.move(mx, 0.0F, 0.0F);
 
-		for(var8 = 0; var8 < var7.size(); ++var8) {
-			var3 = var7.get(var8).clipZCollide(this.bb, var3);
+		for(var8 = 0; var8 < collidingWith.size(); ++var8) {
+			mz = collidingWith.get(var8).clipZCollide(this.bb, mz);
 		}
 
-		this.bb.move(0.0F, 0.0F, var3);
-		this.horizontalCollision = var4 != var1 || var6 != var3;
-		this.onGround = var5 != var2 && var5 < 0.0F;
-		if(var4 != var1) {
+		this.bb.move(0.0F, 0.0F, mz);
+		this.horizontalCollision = savedMotX != mx || savedMotZ != mz;
+		this.onGround = savedMotY != my && savedMotY < 0.0F;
+		if(savedMotX != mx) {
 			this.xd = 0.0F;
 		}
 
-		if(var5 != var2) {
+		if(savedMotY != my) {
 			this.yd = 0.0F;
 		}
 
-		if(var6 != var3) {
+		if(savedMotZ != mz) {
 			this.zd = 0.0F;
 		}
 
@@ -203,13 +201,10 @@ public class Entity implements Serializable {
 	}
 
 	public float getBrightness() {
-		int var1 = (int)this.x;
-		int var2 = (int)(this.y + this.heightOffset / 2.0F);
-		int var3 = (int)this.z;
-		return this.level.getBrightness(var1, var2, var3);
-	}
-
-	public void render(Interface var1, float var2) {
+		int x = (int)this.x;
+		int y = (int)(this.y + this.heightOffset / 2.0F);
+		int z = (int)this.z;
+		return this.level.getBrightness(x, y, z);
 	}
 
 	public void setLevel(Level var1) {

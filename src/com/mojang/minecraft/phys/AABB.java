@@ -28,45 +28,31 @@ public class AABB implements Serializable {
 		float maxX = this.maxX;
 		float maxY = this.maxY;
 		float maxZ = this.maxZ;
-		if(x < 0.0F) {
-			minX += x;
-		}
+		
+		if(x < 0.0F) minX += x;
+		if(x > 0.0F) maxX += x;
 
-		if(x > 0.0F) {
-			maxX += x;
-		}
+		if(y < 0.0F) minY += y;
+		if(y > 0.0F) maxY += y;
 
-		if(y < 0.0F) {
-			minY += y;
-		}
-
-		if(y > 0.0F) {
-			maxY += y;
-		}
-
-		if(z < 0.0F) {
-			minZ += z;
-		}
-
-		if(z > 0.0F) {
-			maxZ += z;
-		}
+		if(z < 0.0F) minZ += z;
+		if(z > 0.0F) maxZ += z;
 
 		return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
 	}
 
-	public AABB grow(float var1, float var2, float var3) {
-		float var4 = this.minX - var1;
-		float var5 = this.minY - var2;
-		float var6 = this.minZ - var3;
-		var1 += this.maxX;
-		var2 += this.maxY;
-		float var7 = this.maxZ + var3;
-		return new AABB(var4, var5, var6, var1, var2, var7);
+	public AABB grow(float x, float y, float z) {
+		float var4 = this.minX - x;
+		float var5 = this.minY - y;
+		float var6 = this.minZ - z;
+		x += this.maxX;
+		y += this.maxY;
+		float var7 = this.maxZ + z;
+		return new AABB(var4, var5, var6, x, y, var7);
 	}
 
-	public AABB cloneMove(float var1, float var2, float var3) {
-		return new AABB(this.minX + var3, this.minY + var2, this.minZ + var3, this.maxX + var1, this.maxY + var2, this.maxZ + var3);
+	public AABB cloneMove(float x, float y, float z) {
+		return new AABB(this.minX + z, this.minY + y, this.minZ + z, this.maxX + x, this.maxY + y, this.maxZ + z);
 	}
 
 	public float clipXCollide(AABB var1, float var2) {
@@ -141,12 +127,12 @@ public class AABB implements Serializable {
 		return var1.maxX > this.minX && var1.minX < this.maxX ? (var1.maxY > this.minY && var1.minY < this.maxY ? var1.maxZ > this.minZ && var1.minZ < this.maxZ : false) : false;
 	}
 
-	public void move(float var1, float var2, float var3) {
-		this.minX += var1;
-		this.minY += var2;
-		this.minZ += var3;
-		this.maxX += var1;
-		this.maxY += var2;
-		this.maxZ += var3;
+	public void move(float x, float y, float z) {
+		this.minX += x;
+		this.minY += y;
+		this.minZ += z;
+		this.maxX += x;
+		this.maxY += y;
+		this.maxZ += z;
 	}
 }

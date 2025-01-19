@@ -33,24 +33,24 @@ public class CommandManager {
         return commands;
     }
 
-    public void executeCommand(String cmd, String[] args, PlayerInstance player) {
+    public void executeCommand(String cmd, String[] args, CommandIssuer issuer) {
         for(Command command : commands) {
             if(command.name.equalsIgnoreCase(cmd) || Arrays.asList(command.aliases).contains(cmd)) {
                 if(command.op) {
-                    if(ClassicBukkit.getServer().admins.containsPlayer(player.name)) {
-                        if(command.onExecution(args, player)) {
-                            player.sendChatMessage(ChatColor.RED + "You dont have permission to execute this command!");
+                    if(ClassicBukkit.getServer().isAdmin(issuer)) {
+                        if(command.onExecution(args, issuer)) {
+                            issuer.sendChatMessage(ChatColor.RED + "You dont have permission to execute this command!");
                         }
                     } else {
-                        player.sendChatMessage(ChatColor.RED + "You dont have permission to execute this command!");
+                        issuer.sendChatMessage(ChatColor.RED + "You dont have permission to execute this command!");
                     }
                     return;
                 } else {
-                    command.onExecution(args, player);
+                    command.onExecution(args, issuer);
                     return;
                 }
             }
         }
-        player.sendChatMessage(ChatColor.WHITE + "Unknown command.");
+        issuer.sendChatMessage(ChatColor.WHITE + "Unknown command.");
     }
 }

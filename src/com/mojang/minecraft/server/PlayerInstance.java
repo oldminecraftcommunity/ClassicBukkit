@@ -23,6 +23,7 @@ import com.mojang.minecraft.net.packets.PlayerTeleportPacket;
 import com.mojang.minecraft.net.packets.TimedOutPacket;
 
 import met.realfreehij.classicbukkit.ClassicBukkit;
+import met.realfreehij.classicbukkit.commands.CommandIssuer;
 import met.realfreehij.classicbukkit.plugins.PluginManager;
 import met.realfreehij.classicbukkit.plugins.events.*;
 
@@ -33,7 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
-public final class PlayerInstance {
+public final class PlayerInstance implements CommandIssuer{
 	private static Logger logger = MinecraftServer.logger;
 	public final SocketConnection connection;
 	private final MinecraftServer minecraft;
@@ -180,8 +181,7 @@ public final class PlayerInstance {
 			}
 
 			if(msg.startsWith("/")) {
-				String[] parts = msg.split(" ");
-				ClassicBukkit.commandManager.executeCommand(parts[0].substring(1), parts.length > 1 ? Arrays.copyOfRange(parts, 1, parts.length) : new String[] {}, this);
+				this.minecraft.parseCommand(this, msg.substring(1));
 			} else {
 				logger.info(this.name + " says: " + msg);
 				this.minecraft.sendPacket(new ChatMessagePacket(this.playerID, this.name + ": " + msg));
@@ -199,8 +199,9 @@ public final class PlayerInstance {
 	private void kickCheat(String var1) {
 		this.kick("Cheat detected: " + var1);
 	}
-
-	public final void sendChatMessage(String msg) {
+	
+	@Override
+	public void sendChatMessage(String msg) {
 		
 		while(msg.length() > 64) {
 			this.sendPacket(new ChatMessagePacket(0, msg.substring(0, 64)));

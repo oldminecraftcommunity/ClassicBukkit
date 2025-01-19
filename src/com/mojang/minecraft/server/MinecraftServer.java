@@ -13,6 +13,7 @@ import com.mojang.minecraft.net.packets.SetTilePacket;
 import com.mojang.minecraft.net.packets.TimedOutPacket;
 
 import met.realfreehij.classicbukkit.ClassicBukkit;
+import met.realfreehij.classicbukkit.commands.CommandIssuer;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,6 +26,7 @@ import java.nio.channels.SocketChannel;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -35,7 +37,7 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 
-public class MinecraftServer implements Runnable {
+public class MinecraftServer implements Runnable, CommandIssuer{
 	public static Logger logger = Logger.getLogger("MinecraftServer"); //public
 	static DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
 	private ConnectionList connectionList;
@@ -53,7 +55,7 @@ public class MinecraftServer implements Runnable {
 	public PlayerList admins = new PlayerList("Admins", new File("admins.txt"));
 	public PlayerList banned = new PlayerList("Banned", new File("banned.txt"));
 	private PlayerList bannedIP = new PlayerList("Banned (IP)", new File("banned-ip.txt"));
-	private List playerList2 = new ArrayList();
+	private List<String> consoleCommands = new ArrayList<>();
 	private String salt = "" + (new Random()).nextLong();
 	private String serverURL = "";
 	public MPPassCalculator mpPassCalculator = new MPPassCalculator(this.salt);
@@ -293,12 +295,17 @@ public class MinecraftServer implements Runnable {
 	public final void levelLoadUpdate(String var1) {
 		logger.fine(var1);
 	}
-
+	
+	public void parseCommand(CommandIssuer issuer, String msg) {
+		String[] parts = msg.split(" ");
+		ClassicBukkit.commandManager.executeCommand(parts[0], parts.length > 1 ? Arrays.copyOfRange(parts, 1, parts.length) : new String[] {}, issuer);
+	}
+	
 	private void socketServer() {
-		List var1 = this.playerList2;
+		List var1 = this.consoleCommands;
 		synchronized(var1) {
-			while(this.playerList2.size() > 0) {
-				//this.parseCommand((PlayerInstance)null, (String)this.playerList2.remove(0));
+			while(this.consoleCommands.size() > 0) {
+				this.parseCommand(this, this.consoleCommands.remove(0));
 			}
 		}
 
@@ -663,8 +670,8 @@ public class MinecraftServer implements Runnable {
 		}
 	}
 
-	static List a(MinecraftServer var0) {
-		return var0.playerList2;
+	static List<String> getConsoleCommands(MinecraftServer var0) {
+		return var0.consoleCommands;
 	}
 
 	static String getServerURL(MinecraftServer server) {
@@ -696,5 +703,17 @@ public class MinecraftServer implements Runnable {
 		} catch (Exception var5) {
 			logger.warning("Failed to open file server.log for writing: " + var5);
 		}
+	}
+
+	public boolean isAdmin(CommandIssuer player) {
+		if(player instanceof PlayerInstance) {
+			return this.admins.containsPlayer(((PlayerInstance)player).name);
+		}
+		return player instanceof MinecraftServer;
+	}
+
+	@Override
+	public void sendChatMessage(String s) {
+		logger.info("[CMD] "+s);
 	}
 }

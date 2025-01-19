@@ -484,8 +484,8 @@ public class Level implements Serializable {
 		if(!this.networkMode) {
 			Coord tickPos = new Coord(x, y, z, id);
 			if(id > 0) {
-				z = Tile.tiles[id].getTickDelay();
-				tickPos.scheduledTime = z;
+				int delay = Tile.tiles[id].getTickDelay();
+				tickPos.scheduledTime = delay;
 			}
 
 			this.tickList.add(tickPos);

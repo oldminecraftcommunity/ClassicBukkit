@@ -4,6 +4,7 @@ import com.mojang.minecraft.level.LevelIO;
 import com.mojang.minecraft.server.PlayerInstance;
 import met.realfreehij.classicbukkit.ClassicBukkit;
 import met.realfreehij.classicbukkit.commands.Command;
+import met.realfreehij.classicbukkit.commands.CommandIssuer;
 import met.realfreehij.classicbukkit.utils.ChatColor;
 
 import java.io.FileOutputStream;
@@ -15,7 +16,7 @@ public class SaveCommand extends Command {
     }
 
     @Override
-    public boolean onExecution(String[] args, PlayerInstance player) {
+    public boolean onExecution(String[] args, CommandIssuer player) {
         try {
             LevelIO.save(ClassicBukkit.getServer().level, new FileOutputStream("server_level.dat"));
             player.sendChatMessage(ChatColor.GREEN + "Successfully saved the map!");
