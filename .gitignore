@@ -1,0 +1,9 @@
+# Server stuff
+*.txt
+*.log
+*.dat
+*.properties
+# Compile (bin) stuff
+*.class
+*.mf
+*.iml
