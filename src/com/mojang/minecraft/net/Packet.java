@@ -23,29 +23,9 @@ public abstract class Packet {
 		KICK_PLAYER;
 	}
 	
-	/*public static final Packet[] PACKETS = new Packet[256];
-	public static final Packet LOGIN = new Packet(new Class[]{Byte.TYPE, String.class, String.class, Byte.TYPE});
-	public static final Packet TIMED_OUT = new Packet(new Class[0]);
-	public static final Packet LEVEL_INITIALIZE = new Packet(new Class[0]);
-	public static final Packet LEVEL_DATA_CHUNK = new Packet(new Class[]{Short.TYPE, byte[].class, Byte.TYPE});
-	public static final Packet LEVEL_FINALIZE = new Packet(new Class[]{Short.TYPE, Short.TYPE, Short.TYPE});
-	public static final Packet PLACE_OR_REMOVE_TILE = new Packet(new Class[]{Short.TYPE, Short.TYPE, Short.TYPE, Byte.TYPE, Byte.TYPE});
-	public static final Packet SET_TILE = new Packet(new Class[]{Short.TYPE, Short.TYPE, Short.TYPE, Byte.TYPE});
-	public static final Packet PLAYER_JOIN = new Packet(new Class[]{Byte.TYPE, String.class, Short.TYPE, Short.TYPE, Short.TYPE, Byte.TYPE, Byte.TYPE});
-	public static final Packet PLAYER_TELEPORT = new Packet(new Class[]{Byte.TYPE, Short.TYPE, Short.TYPE, Short.TYPE, Byte.TYPE, Byte.TYPE});
-	public static final Packet PLAYER_MOVE_AND_ROTATE = new Packet(new Class[]{Byte.TYPE, Byte.TYPE, Byte.TYPE, Byte.TYPE, Byte.TYPE, Byte.TYPE});
-	public static final Packet PLAYER_MOVE = new Packet(new Class[]{Byte.TYPE, Byte.TYPE, Byte.TYPE, Byte.TYPE});
-	public static final Packet PLAYER_ROTATE = new Packet(new Class[]{Byte.TYPE, Byte.TYPE, Byte.TYPE});
-	public static final Packet PLAYER_DISCONNECT = new Packet(new Class[]{Byte.TYPE});
-	public static final Packet CHAT_MESSAGE = new Packet(new Class[]{Byte.TYPE, String.class});
-	public static final Packet KICK_PLAYER = new Packet(new Class[]{String.class});
-	public final int size;*/
 	public int size = -1;
-	//public Class[] fields;
 
-	public Packet() {
-		//if(!(this instanceof TimedOutPacket)) System.out.println("Created new "+this.getClass().getName());
-	}
+	public Packet() {}
 	
 	public abstract PacketID getPacketID();
 	public abstract void read(SocketConnection con);

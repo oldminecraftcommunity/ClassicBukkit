@@ -3,6 +3,7 @@ package met.realfreehij.classicbukkit.commands.custom;
 import com.mojang.minecraft.server.PlayerInstance;
 import met.realfreehij.classicbukkit.ClassicBukkit;
 import met.realfreehij.classicbukkit.commands.Command;
+import met.realfreehij.classicbukkit.commands.CommandIssuer;
 import met.realfreehij.classicbukkit.plugins.PluginEntry;
 import met.realfreehij.classicbukkit.utils.ChatColor;
 
@@ -12,7 +13,7 @@ public class PluginsCommand extends Command {
     }
 
     @Override
-    public boolean onExecution(String[] args, PlayerInstance player) {
+    public boolean onExecution(String[] args, CommandIssuer player) {
         player.sendChatMessage(ChatColor.WHITE + " - " + ChatColor.GREEN + "Showing list of plugins" + ChatColor.WHITE + " - ");
         for(PluginEntry pluginEntry : ClassicBukkit.pluginManager.getLoadedPlugins()) {
             player.sendChatMessage(ChatColor.WHITE + pluginEntry.getName() + ChatColor.GREEN + " v" + pluginEntry.getVersion() + ChatColor.WHITE + " by " + ChatColor.YELLOW + pluginEntry.getAuthor());

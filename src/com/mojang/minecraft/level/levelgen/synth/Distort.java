@@ -9,7 +9,7 @@ public final class Distort extends Synth {
 		this.distort = var2;
 	}
 
-	public final double getValue(double var1, double var3) {
-		return this.source.getValue(var1 + this.distort.getValue(var1, var3), var3);
+	public final double getValue(double x, double y) {
+		return this.source.getValue(x + this.distort.getValue(x, y), y);
 	}
 }

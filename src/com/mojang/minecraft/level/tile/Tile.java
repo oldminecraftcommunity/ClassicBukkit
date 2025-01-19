@@ -53,7 +53,6 @@ public class Tile {
 	public final int id;
 
 	protected Tile(int var1) {
-		//new Random();
 		tiles[var1] = this;
 		this.id = var1;
 	}

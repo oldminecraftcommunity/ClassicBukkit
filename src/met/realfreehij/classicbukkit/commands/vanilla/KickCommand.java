@@ -4,6 +4,7 @@ import com.mojang.minecraft.server.MinecraftServer;
 import com.mojang.minecraft.server.PlayerInstance;
 import met.realfreehij.classicbukkit.ClassicBukkit;
 import met.realfreehij.classicbukkit.commands.Command;
+import met.realfreehij.classicbukkit.commands.CommandIssuer;
 import met.realfreehij.classicbukkit.utils.ChatColor;
 
 import java.util.Arrays;
@@ -15,7 +16,7 @@ public class KickCommand extends Command {
     }
 
     @Override
-    public boolean onExecution(String[] args, PlayerInstance player) {
+    public boolean onExecution(String[] args, CommandIssuer player) {
         if(args.length > 0) {
         	MinecraftServer serv = ClassicBukkit.getServer();
         	List<PlayerInstance> players = serv.getPlayerList();

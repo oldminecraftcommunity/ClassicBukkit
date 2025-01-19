@@ -3,6 +3,7 @@ package met.realfreehij.classicbukkit.commands.vanilla;
 import com.mojang.minecraft.server.PlayerInstance;
 import met.realfreehij.classicbukkit.ClassicBukkit;
 import met.realfreehij.classicbukkit.commands.Command;
+import met.realfreehij.classicbukkit.commands.CommandIssuer;
 import met.realfreehij.classicbukkit.utils.ChatColor;
 
 import java.util.Arrays;
@@ -13,7 +14,7 @@ public class BanCommand extends Command {
     }
 
     @Override
-    public boolean onExecution(String[] args, PlayerInstance player) {
+    public boolean onExecution(String[] args, CommandIssuer issuer) {
         if(args.length > 0) {
             ClassicBukkit.getServer().banned.addPlayer(args[0]);
             String reason = args.length > 1 ? String.join(" ", Arrays.copyOfRange(args, 1, args.length)) : "no reason";
@@ -21,7 +22,7 @@ public class BanCommand extends Command {
                 player1.sendChatMessage(ChatColor.WHITE + args[0] + " was banned for " + reason);
             }
         } else {
-            player.sendChatMessage(ChatColor.RED + "Usage: /ban <player> <reason>");
+            issuer.sendChatMessage(ChatColor.RED + "Usage: /ban <player> <reason>");
         }
         return false;
     }

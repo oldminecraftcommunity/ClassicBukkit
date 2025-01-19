@@ -4,6 +4,7 @@ import com.mojang.minecraft.net.Packet;
 import com.mojang.minecraft.server.PlayerInstance;
 import met.realfreehij.classicbukkit.ClassicBukkit;
 import met.realfreehij.classicbukkit.commands.Command;
+import met.realfreehij.classicbukkit.commands.CommandIssuer;
 import met.realfreehij.classicbukkit.utils.ChatColor;
 
 import java.awt.*;
@@ -14,7 +15,7 @@ public class VersionCommand extends Command {
     }
 
     @Override
-    public boolean onExecution(String[] args, PlayerInstance player) {
+    public boolean onExecution(String[] args, CommandIssuer player) {
         player.sendChatMessage(ChatColor.WHITE + "This server is running " + ChatColor.GREEN + ClassicBukkit.name);
         player.sendChatMessage(ChatColor.WHITE + "Version: " + ClassicBukkit.version);
         return false;

@@ -14,8 +14,13 @@ public abstract class Command {
         this.aliases = aliases;
         this.op = op;
     }
-
+    
+    @Deprecated
     public boolean onExecution(String[] args, PlayerInstance player) {
-        return false;
+        return this.onExecution(args, (CommandIssuer) player);
+    }
+    
+    public boolean onExecution(String[] args, CommandIssuer issuer) {
+    	return false;
     }
 }
