@@ -73,7 +73,7 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 			this.port = Integer.parseInt(this.properties.getProperty("port", "25565"));
 			this.maxPlayers = Integer.parseInt(this.properties.getProperty("max-players", "16"));
 			this.isPublic = Boolean.parseBoolean(this.properties.getProperty("public", "true"));
-			this.verifyNames = Boolean.parseBoolean(this.properties.getProperty("verify-names", "true"));
+			this.verifyNames = Boolean.parseBoolean(this.properties.getProperty("verify-names", "false"));
 			if(this.maxPlayers < 1) {
 				this.maxPlayers = 1;
 			}
