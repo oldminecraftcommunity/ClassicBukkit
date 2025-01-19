@@ -17,10 +17,14 @@ public abstract class Command {
     
     @Deprecated
     public boolean onExecution(String[] args, PlayerInstance player) {
-        return this.onExecution(args, (CommandIssuer) player);
+        return false;
     }
     
     public boolean onExecution(String[] args, CommandIssuer issuer) {
+    	if(issuer instanceof PlayerInstance) {
+    		return this.onExecution(args, (PlayerInstance) issuer);
+    	}
+    	issuer.sendChatMessage("You must be a player to execute this command.");
     	return false;
     }
 }
