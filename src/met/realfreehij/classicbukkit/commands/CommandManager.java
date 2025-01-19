@@ -1,11 +1,7 @@
 package met.realfreehij.classicbukkit.commands;
 
-import com.mojang.minecraft.server.PlayerInstance;
 import met.realfreehij.classicbukkit.ClassicBukkit;
-import met.realfreehij.classicbukkit.commands.custom.HelpCommand;
-import met.realfreehij.classicbukkit.commands.custom.PluginsCommand;
-import met.realfreehij.classicbukkit.commands.custom.SaveCommand;
-import met.realfreehij.classicbukkit.commands.custom.VersionCommand;
+import met.realfreehij.classicbukkit.commands.custom.*;
 import met.realfreehij.classicbukkit.commands.vanilla.BanCommand;
 import met.realfreehij.classicbukkit.commands.vanilla.KickCommand;
 import met.realfreehij.classicbukkit.utils.ChatColor;
@@ -23,6 +19,7 @@ public class CommandManager {
         commands.add(new PluginsCommand());
         commands.add(new SaveCommand());
         commands.add(new BanCommand());
+        commands.add(new StopCommand());
     }
 
     public void addCommand(Command command) {

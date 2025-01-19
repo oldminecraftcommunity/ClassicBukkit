@@ -14,13 +14,9 @@ import com.mojang.minecraft.net.packets.TimedOutPacket;
 
 import met.realfreehij.classicbukkit.ClassicBukkit;
 import met.realfreehij.classicbukkit.commands.CommandIssuer;
+import met.realfreehij.classicbukkit.utils.ChatColor;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.net.URLEncoder;
 import java.nio.channels.SocketChannel;
 import java.text.DateFormat;
@@ -203,7 +199,6 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 						var9.put("salt", this.salt);
 						var9.put("version", Byte.valueOf((byte)6));
 						String var12 = assembleHeartbeat(var9);
-						(new HeartbeatThread(this, var12)).start();
 					}
 				}
 
@@ -714,6 +709,19 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 
 	@Override
 	public void sendChatMessage(String s) {
-		logger.info("[CMD] "+s);
+		s = ChatColor.stringToANSI(s);
+		logger.info(s+ChatColor.ANSI_RESET);
 	}
+
+	public void shutdownServer() {
+		for (PlayerInstance player : this.playerList) {
+			player.kick("Server is shutting down.");
+		}
+        try {
+            LevelIO.save(this.level, new FileOutputStream("server_level.dat"));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+		System.exit(0);
+    }
 }
