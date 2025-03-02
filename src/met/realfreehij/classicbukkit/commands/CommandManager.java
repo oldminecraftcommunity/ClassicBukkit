@@ -2,8 +2,7 @@ package met.realfreehij.classicbukkit.commands;
 
 import met.realfreehij.classicbukkit.ClassicBukkit;
 import met.realfreehij.classicbukkit.commands.custom.*;
-import met.realfreehij.classicbukkit.commands.vanilla.BanCommand;
-import met.realfreehij.classicbukkit.commands.vanilla.KickCommand;
+import met.realfreehij.classicbukkit.commands.vanilla.*;
 import met.realfreehij.classicbukkit.utils.ChatColor;
 
 import java.util.ArrayList;
@@ -20,6 +19,8 @@ public class CommandManager {
         commands.add(new SaveCommand());
         commands.add(new BanCommand());
         commands.add(new StopCommand());
+        commands.add(new OpCommand());
+        commands.add(new DeopCommand());
     }
 
     public void addCommand(Command command) {
