@@ -1,6 +1,5 @@
 # ClassicBukkit - Minecraft c0.0.23a_01 server software
 
-[![discord](https://img.shields.io/badge/Discord-join-7289DA.svg)](https://discord.gg/2W4DHM5dXj)
 [![download-latest](https://img.shields.io/badge/Download-latest-green)](https://github.com/oldminecraftcommunity/ClassicBukkit/releases/latest)
 
 An attempt to recreate original bukkit structure for classic c0.0.23a_01.
