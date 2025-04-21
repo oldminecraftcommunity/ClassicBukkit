@@ -12,6 +12,7 @@ public class ClassicBukkit {
     public static final CommandManager commandManager = new CommandManager();
     public static final String name = "ClassicBukkit";
     public static final String version = "1.0alpha";
+    public static final int api = 1;
 
     public ClassicBukkit(MinecraftServer server) {
         ClassicBukkit.server = server;
