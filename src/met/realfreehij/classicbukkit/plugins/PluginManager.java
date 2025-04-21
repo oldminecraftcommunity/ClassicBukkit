@@ -25,6 +25,7 @@ public class PluginManager {
             String version = null;
             String author = null;
             String main = null;
+            Integer api = null;
 
             InputStream inputStream = classLoader.getResourceAsStream("plugin.yml");
             if(inputStream == null) {
@@ -54,6 +55,9 @@ public class PluginManager {
                     case "main":
                         main = value.trim();
                         break;
+                    case "api":
+                        api = Integer.parseInt(value.trim());
+                        break;
                 }
             }
             
@@ -71,6 +75,15 @@ public class PluginManager {
             }
             if(main == null) {
                 System.out.println("no main class in plugin.yml in " + jarFile.getName());
+                return;
+            }
+            if(api == null) {
+                System.out.println("no api version in plugin.yml in " + jarFile.getName() + ", set to 1");
+                api = 1;
+            }
+
+            if(api > ClassicBukkit.api) {
+                System.out.println(name + " (" + jarFile.getName() + ") uses newer api version that might contain unsupported features, skipping");
                 return;
             }
 
