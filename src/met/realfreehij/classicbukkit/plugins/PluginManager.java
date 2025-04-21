@@ -1,6 +1,7 @@
 package met.realfreehij.classicbukkit.plugins;
 
 import com.mojang.minecraft.server.MinecraftServer;
+import met.realfreehij.classicbukkit.ClassicBukkit;
 import met.realfreehij.classicbukkit.plugins.events.*;
 import met.realfreehij.classicbukkit.plugins.events.listeners.*;
 
