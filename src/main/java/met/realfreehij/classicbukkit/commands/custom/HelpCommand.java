@@ -14,7 +14,7 @@ public class HelpCommand extends Command {
     @Override
     public boolean onExecution(String[] args, CommandIssuer player) {
         player.sendChatMessage(ChatColor.WHITE + " - " + ChatColor.GREEN + "Showing list of commands" + ChatColor.WHITE + " - ");
-        for(Command command : ClassicBukkit.commandManager.getCommands()) {
+        for(Command command : ClassicBukkit.commandManager.commandsList) {
             if(command.op) {
                 if(ClassicBukkit.getServer().isAdmin(player)) {
                     player.sendChatMessage(ChatColor.YELLOW + "/" + command.name + ChatColor.WHITE + ": " + command.description);

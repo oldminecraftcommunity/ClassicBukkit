@@ -8,11 +8,13 @@ import met.realfreehij.classicbukkit.utils.ChatColor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import com.mojang.minecraft.server.MinecraftServer;
 
 public class CommandManager {
     public final HashMap<String, Command> commands = new HashMap<>();
+    public final HashSet<Command> commandsList = new HashSet<>();
     public CommandManager() {
     	addCommand(new KickCommand());
     	addCommand(new HelpCommand());
@@ -31,6 +33,7 @@ public class CommandManager {
     	if(oldcmd != null) {
     		MinecraftServer.logger.warning(String.format("Command with name \"%s\" is already registered(old: %s, new: %s), overriding!", cmd, oldcmd.getClass().getName(), command.getClass().getName()));
     	}
+    	commandsList.add(command);
         commands.put(cmd, command);
         for(String alias : command.aliases) {
         	alias = alias.toLowerCase();
@@ -64,8 +67,12 @@ public class CommandManager {
         }
     }
     
+    /**
+     * @deprecated Use commandsList
+     * @return
+     */
     @Deprecated
     public ArrayList<Command> getCommands() {
-        return new ArrayList<>(commands.values());
+        return new ArrayList<>(commandsList);
     }
 }
