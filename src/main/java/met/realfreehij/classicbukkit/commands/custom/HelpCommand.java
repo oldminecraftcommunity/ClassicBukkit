@@ -13,7 +13,6 @@ public class HelpCommand extends Command {
 
     @Override
     public boolean onExecution(String[] args, CommandIssuer player) {
-    	player.sendChatMessage("&00&11&22&33&44&55&66&77&88&99&aa&bb&cc&dd&ee&ff");
         player.sendChatMessage(ChatColor.WHITE + " - " + ChatColor.GREEN + "Showing list of commands" + ChatColor.WHITE + " - ");
         for(Command command : ClassicBukkit.commandManager.getCommands()) {
             if(command.op) {

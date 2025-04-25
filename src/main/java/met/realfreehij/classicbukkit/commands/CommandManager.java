@@ -7,48 +7,65 @@ import met.realfreehij.classicbukkit.utils.ChatColor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+
+import com.mojang.minecraft.server.MinecraftServer;
 
 public class CommandManager {
-    private final ArrayList<Command> commands = new ArrayList<>();
-
+    public final HashMap<String, Command> commands = new HashMap<>();
     public CommandManager() {
-        commands.add(new KickCommand());
-        commands.add(new HelpCommand());
-        commands.add(new VersionCommand());
-        commands.add(new PluginsCommand());
-        commands.add(new SaveCommand());
-        commands.add(new BanCommand());
-        commands.add(new StopCommand());
-        commands.add(new OpCommand());
-        commands.add(new DeopCommand());
+    	addCommand(new KickCommand());
+    	addCommand(new HelpCommand());
+    	addCommand(new VersionCommand());
+    	addCommand(new PluginsCommand());
+    	addCommand(new SaveCommand());
+    	addCommand(new BanCommand());
+    	addCommand(new StopCommand());
+    	addCommand(new OpCommand());
+    	addCommand(new DeopCommand());
     }
 
     public void addCommand(Command command) {
-        commands.add(command);
-    }
-
-    public ArrayList<Command> getCommands() {
-        return commands;
+    	String cmd = command.name.toLowerCase();
+    	Command oldcmd = commands.get(cmd);
+    	if(oldcmd != null) {
+    		MinecraftServer.logger.warning(String.format("Command with name \"%s\" is already registered(old: %s, new: %s), overriding!", cmd, oldcmd.getClass().getName(), command.getClass().getName()));
+    	}
+        commands.put(cmd, command);
+        for(String alias : command.aliases) {
+        	alias = alias.toLowerCase();
+        	Command ss = commands.get(alias);
+        	if(ss != null) {
+        		MinecraftServer.logger.warning(String.format("Command with name \"%s\" is already registered(old: %s, new: %s), overriding!", alias, ss.getClass().getName(), command.getClass().getName()));
+        	}
+        	commands.put(alias, command);
+        }
     }
 
     public void executeCommand(String cmd, String[] args, CommandIssuer issuer) {
-        for(Command command : commands) {
-            if(command.name.equalsIgnoreCase(cmd) || Arrays.asList(command.aliases).contains(cmd)) {
-                if(command.op) {
-                    if(ClassicBukkit.getServer().isAdmin(issuer)) {
-                        if(command.onExecution(args, issuer)) {
-                            issuer.sendChatMessage(ChatColor.RED + "You dont have permission to execute this command!");
-                        }
-                    } else {
-                        issuer.sendChatMessage(ChatColor.RED + "You dont have permission to execute this command!");
-                    }
-                    return;
-                } else {
-                    command.onExecution(args, issuer);
-                    return;
+    	Command command = commands.get(cmd.toLowerCase());
+    	if(command == null) {
+    		issuer.sendChatMessage(ChatColor.WHITE + "Unknown command.");
+    		return;
+    	}
+    	
+    	if(command.op) {
+            if(ClassicBukkit.getServer().isAdmin(issuer)) {
+                if(command.onExecution(args, issuer)) {
+                    issuer.sendChatMessage(ChatColor.RED + "You dont have permission to execute this command!");
                 }
+            } else {
+                issuer.sendChatMessage(ChatColor.RED + "You dont have permission to execute this command!");
             }
+            return;
+        } else {
+            command.onExecution(args, issuer);
+            return;
         }
-        issuer.sendChatMessage(ChatColor.WHITE + "Unknown command.");
+    }
+    
+    @Deprecated
+    public ArrayList<Command> getCommands() {
+        return new ArrayList<>(commands.values());
     }
 }
