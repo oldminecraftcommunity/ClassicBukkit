@@ -18,7 +18,6 @@ import met.realfreehij.classicbukkit.utils.ChatColor;
 import org.fusesource.jansi.AnsiConsole;
 
 import java.io.*;
-import java.net.URLEncoder;
 import java.nio.channels.SocketChannel;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -170,15 +169,15 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 		try {
 			long var3 = System.nanoTime();
 			long var5 = System.nanoTime();
-			int var7 = 0;
+			int tickCounter = 0;
 
 			while(true) {
 				this.socketServer();
 
-				for(; System.nanoTime() - var5 > (long)var1; ++var7) {
+				for(; System.nanoTime() - var5 > (long)var1; ++tickCounter) {
 					var5 += (long)var1;
-					this.tickLevel();
-					if(var7 % 1200 == 0) {
+					this.tick();
+					if(tickCounter % 1200 == 0) {
 						MinecraftServer var8 = this;
 
 						try {
@@ -189,18 +188,6 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 						}
 
 						logger.info("Level saved! Load: " + this.playerList.size() + "/" + this.maxPlayers);
-					}
-
-					if(var7 % 900 == 0) {
-						HashMap<String, Object> var9 = new HashMap<>();
-						var9.put("name", this.serverName);
-						var9.put("users", Integer.valueOf(this.playerList.size()));
-						var9.put("max", Integer.valueOf(this.maxPlayers));
-						var9.put("public", Boolean.valueOf(this.isPublic));
-						var9.put("port", Integer.valueOf(this.port));
-						var9.put("salt", this.salt);
-						var9.put("version", Byte.valueOf((byte)6));
-						String var12 = assembleHeartbeat(var9);
 					}
 				}
 
@@ -217,35 +204,12 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 		}
 	}
 
-	private static String assembleHeartbeat(Map<String, Object> var0) {
-		try {
-			String var1 = "";
-
-			String var3;
-			for(Iterator var2 = var0.keySet().iterator(); var2.hasNext(); var1 = var1 + var3 + "=" + URLEncoder.encode(var0.get(var3).toString(), "UTF-8")) {
-				var3 = (String)var2.next();
-				if(var1 != "") {
-					var1 = var1 + "&";
-				}
-			}
-
-			return var1;
-		} catch (Exception var4) {
-			var4.printStackTrace();
-			throw new RuntimeException("Failed to assemble heartbeat! This is pretty fatal");
-		}
-	}
-
-	private void tickLevel() {
-		Iterator var1 = this.playerList.iterator();
-
-		while(var1.hasNext()) {
-			PlayerInstance var2 = (PlayerInstance)var1.next();
-
+	private void tick() {
+		for(PlayerInstance player : this.playerList) {
 			try {
-				var2.handlePackets();
-			} catch (Exception var8) {
-				var2.handleException(var8);
+				player.handlePackets();
+			} catch (Exception e) {
+				player.handleException(e);
 			}
 		}
 
@@ -299,7 +263,7 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 	}
 	
 	private void socketServer() {
-		List var1 = this.consoleCommands;
+		List<String> var1 = this.consoleCommands;
 		synchronized(var1) {
 			while(this.consoleCommands.size() > 0) {
 				this.parseCommand(this, this.consoleCommands.remove(0));
@@ -547,32 +511,6 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 		}
 
 	}*/
-
-	private void op(String var1) {
-		this.admins.addPlayer(var1);
-		Iterator var3 = this.playerList.iterator();
-
-		while(var3.hasNext()) {
-			PlayerInstance var2 = (PlayerInstance)var3.next();
-			if(var2.name.equalsIgnoreCase(var1)) {
-				var2.sendChatMessage("You\'re now op!");
-			}
-		}
-
-	}
-
-	private void deop(String var1) {
-		this.admins.removePlayer(var1);
-		Iterator var3 = this.playerList.iterator();
-
-		while(var3.hasNext()) {
-			PlayerInstance var2 = (PlayerInstance)var3.next();
-			if(var2.name.equalsIgnoreCase(var1)) {
-				var2.sendChatMessage("You\'re no longer op!");
-			}
-		}
-
-	}
 
 	private void banip(String var1) {
 		boolean var2 = false;

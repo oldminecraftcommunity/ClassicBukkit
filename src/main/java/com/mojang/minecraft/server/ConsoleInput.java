@@ -1,7 +1,5 @@
 package com.mojang.minecraft.server;
 
-import met.realfreehij.classicbukkit.ClassicBukkit;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;

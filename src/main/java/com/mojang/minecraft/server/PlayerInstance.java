@@ -24,12 +24,9 @@ import com.mojang.minecraft.net.packets.TimedOutPacket;
 
 import met.realfreehij.classicbukkit.ClassicBukkit;
 import met.realfreehij.classicbukkit.commands.CommandIssuer;
-import met.realfreehij.classicbukkit.plugins.PluginManager;
 import met.realfreehij.classicbukkit.plugins.events.*;
-
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;

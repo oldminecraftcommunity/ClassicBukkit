@@ -23,7 +23,7 @@ public class Level implements Serializable {
 	public int ySpawn;
 	public int zSpawn;
 	public float rotSpawn;
-	private transient ArrayList levelListeners = new ArrayList();
+	private transient ArrayList<MinecraftServer> levelListeners = new ArrayList<>();
 	private transient int[] heightMap;
 	private transient Random random = new Random();
 	private transient int randValue = this.random.nextInt();
@@ -37,7 +37,7 @@ public class Level implements Serializable {
 		if(this.blocks == null) {
 			throw new RuntimeException("The level is corrupt!");
 		} else {
-			this.levelListeners = new ArrayList();
+			this.levelListeners = new ArrayList<>();
 			this.heightMap = new int[this.width * this.height];
 			Arrays.fill(this.heightMap, this.depth);
 			this.calcLightDepths(0, 0, this.width, this.height);
@@ -123,10 +123,6 @@ public class Level implements Serializable {
 	}
 
 	public void finalize() {
-	}
-
-	public void removeListener$74652038(MinecraftServer var1) {
-		this.levelListeners.remove(var1);
 	}
 
 	public boolean isLightBlocker(int var1, int var2, int var3) {
@@ -600,7 +596,6 @@ public class Level implements Serializable {
 				float var16 = var4 * var14 + var5;
 				var14 = var4 - var5 * var14;
 				float var17 = var2 * var12 + var3 * var14;
-				var16 = var16;
 				var14 = var2 * var14 - var3 * var12;
 
 				for(int var15 = 0; var15 < 10; ++var15) {

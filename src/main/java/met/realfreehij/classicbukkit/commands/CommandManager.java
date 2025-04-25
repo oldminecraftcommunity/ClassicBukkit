@@ -4,9 +4,7 @@ import met.realfreehij.classicbukkit.ClassicBukkit;
 import met.realfreehij.classicbukkit.commands.custom.*;
 import met.realfreehij.classicbukkit.commands.vanilla.*;
 import met.realfreehij.classicbukkit.utils.ChatColor;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 

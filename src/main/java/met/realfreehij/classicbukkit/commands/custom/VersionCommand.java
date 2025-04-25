@@ -1,13 +1,9 @@
 package met.realfreehij.classicbukkit.commands.custom;
 
-import com.mojang.minecraft.net.Packet;
-import com.mojang.minecraft.server.PlayerInstance;
 import met.realfreehij.classicbukkit.ClassicBukkit;
 import met.realfreehij.classicbukkit.commands.Command;
 import met.realfreehij.classicbukkit.commands.CommandIssuer;
 import met.realfreehij.classicbukkit.utils.ChatColor;
-
-import java.awt.*;
 
 public class VersionCommand extends Command {
     public VersionCommand() {

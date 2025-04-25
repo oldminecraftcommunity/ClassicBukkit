@@ -1,7 +1,6 @@
 package met.realfreehij.classicbukkit.commands.custom;
 
 import com.mojang.minecraft.level.LevelIO;
-import com.mojang.minecraft.server.PlayerInstance;
 import met.realfreehij.classicbukkit.ClassicBukkit;
 import met.realfreehij.classicbukkit.commands.Command;
 import met.realfreehij.classicbukkit.commands.CommandIssuer;
