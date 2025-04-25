@@ -4,7 +4,7 @@
 
 An attempt to recreate original bukkit structure for classic c0.0.23a_01.
 
-## How to install
+## How to run
 
 You can download latest jar in releases tab and run it same as you do with normal bukkit: `java -jar *jar file name*`.
 
