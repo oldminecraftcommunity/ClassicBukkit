@@ -42,7 +42,8 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 	private List<SendTimer> sendTimers = new ArrayList<>();
 	private int maxPlayers;
 	private Properties properties = new Properties();
-	public Level level;
+	public HashMap<String, Level> levels = new HashMap<>();
+	
 	private boolean isPublic = false;
 	public String serverName;
 	public String motd;
@@ -178,16 +179,7 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 					var5 += (long)var1;
 					this.tick();
 					if(tickCounter % 1200 == 0) {
-						MinecraftServer var8 = this;
-
-						try {
-							new LevelIO(var8);
-							LevelIO.save(var8.level, new FileOutputStream("server_level.dat"));
-						} catch (Exception var10) {
-							logger.severe("Failed to save the level! " + var10);
-						}
-
-						logger.info("Level saved! Load: " + this.playerList.size() + "/" + this.maxPlayers);
+						this.saveLevels();
 					}
 				}
 
@@ -204,6 +196,17 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 		}
 	}
 
+	private void saveLevels() {
+		for(Level level : this.levels.values()) {
+			try {
+				level.save();
+			}catch(IOException e) {
+				logger.severe("Failed to save the level! " + e);
+			}
+		}
+		logger.info("Level saved! Load: " + this.playerList.size() + "/" + this.maxPlayers);
+	}
+
 	private void tick() {
 		for(PlayerInstance player : this.playerList) {
 			try {
@@ -213,7 +216,9 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 			}
 		}
 
-		this.level.tick();
+		for(Level level: this.levels.values()) {
+			level.tick();
+		}
 
 		for(int var9 = 0; var9 < this.sendTimers.size(); ++var9) {
 			SendTimer var10 = (SendTimer)this.sendTimers.get(var9);
@@ -367,7 +372,7 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 								logger.info(con.ip + " tried to connect, but failed because the server was full.");
 								server.addTimer(con);
 							} else {
-								PlayerInstance player = new PlayerInstance(server, con, slot);
+								PlayerInstance player = new PlayerInstance(server, con, slot, this.getDefaultLevel());
 								logger.info(player + " connected");
 								server.playerInstancesMap.put(con, player);
 								server.playerList.add(player);
@@ -457,8 +462,8 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 		}
 	}*/
 
-	public final void setTile(int x, int y, int z) {
-		this.sendPacket(new SetTilePacket((short)x, (short)y, (short)z, (byte)this.level.getTile(x, y, z)));
+	public final void setTile(Level level, int x, int y, int z) {
+		this.sendPacket(new SetTilePacket((short)x, (short)y, (short)z, (byte)level.getTile(x, y, z)));
 	}
 
 	private int freePlayerSlots() {
@@ -569,40 +574,50 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 
 	public static void main(String[] args) {
 		try {
-			MinecraftServer var6 = new MinecraftServer();
-			MinecraftServer var1 = var6;
+			MinecraftServer server = new MinecraftServer();
 			logger.info("Setting up");
-			File var2 = new File("server_level.dat");
-			if(var2.exists()) {
-				try {
-					var1.level = (new LevelIO(var1)).load(new FileInputStream(var2));
-				} catch (Exception var4) {
-					logger.warning("Failed to load level. Generating a new level");
-					var4.printStackTrace();
-				}
-			} else {
-				logger.warning("No level file found. Generating a new level");
-			}
-
-			if(var6.level == null) {
-				var6.level = (new LevelGen(var6)).generateLevel("--", 256, 256, 64);
-			}
-
-			try {
-				new LevelIO(var1);
-				LevelIO.save(var1.level, new FileOutputStream("server_level.dat"));
-			} catch (Exception var3) {
-			}
-
-			var6.level.addListener(var6);
-			Thread var7 = new Thread(var6);
+			
+			server.getOrLoadOrGenerate("server_level");
+			
+			Thread var7 = new Thread(server);
 			var7.start();
 
-			new ClassicBukkit(var6);
+			new ClassicBukkit(server);
 		} catch (Exception var5) {
 			logger.severe("Failed to start the server!");
 			var5.printStackTrace();
 		}
+	}
+
+	public Level getOrLoadOrGenerate(String name) {
+		Level level = this.levels.get(name);
+		if(level != null) return level;
+		
+		File var2 = new File(name);
+		
+		if(var2.exists()) {
+			try {
+				level = (new LevelIO(this)).load(new FileInputStream(var2));
+			} catch (Exception var4) {
+				logger.warning("Failed to load level. Generating a new level");
+				var4.printStackTrace();
+			}
+		} else {
+			logger.warning("No level file found. Generating a new level");
+		}
+
+		if(level == null) {
+			level = (new LevelGen(this)).generateLevel("--", 256, 256, 64);
+		}
+
+		try {
+			LevelIO.save(level, new FileOutputStream("server_level.dat"));
+		} catch (Exception var3) {
+		}
+
+		level.addListener(this);
+		this.levels.put(name, level);
+		return level;
 	}
 
 	static List<String> getConsoleCommands(MinecraftServer var0) {
@@ -657,12 +672,12 @@ public class MinecraftServer implements Runnable, CommandIssuer{
 		for (PlayerInstance player : this.playerList) {
 			player.kick("Server is shutting down.");
 		}
-        try {
-            LevelIO.save(this.level, new FileOutputStream("server_level.dat"));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        this.saveLevels();
 		AnsiConsole.systemUninstall();
 		System.exit(0);
     }
+
+	public Level getDefaultLevel() {
+		return this.levels.get("server_level");
+	}
 }

@@ -5,6 +5,12 @@ import com.mojang.minecraft.level.liquid.Liquid;
 import com.mojang.minecraft.level.tile.Tile;
 import com.mojang.minecraft.phys.AABB;
 import com.mojang.minecraft.server.MinecraftServer;
+
+import met.realfreehij.classicbukkit.ClassicBukkit;
+
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -212,7 +218,7 @@ public class Level implements Serializable {
 				this.calcLightDepths(var1, var3, 1, 1);
 
 				for(var4 = 0; var4 < this.levelListeners.size(); ++var4) {
-					((MinecraftServer)this.levelListeners.get(var4)).setTile(var1, var2, var3);
+					((MinecraftServer)this.levelListeners.get(var4)).setTile(this, var1, var2, var3);
 				}
 
 				return true;
@@ -639,5 +645,10 @@ public class Level implements Serializable {
 
 	public void setNetworkMode(boolean var1) {
 		this.networkMode = var1;
+	}
+
+	public void save() throws IOException {
+		new LevelIO(ClassicBukkit.getServer());
+		LevelIO.save(this, new FileOutputStream("server_level.dat")); //TODO some way to save multiple levels
 	}
 }

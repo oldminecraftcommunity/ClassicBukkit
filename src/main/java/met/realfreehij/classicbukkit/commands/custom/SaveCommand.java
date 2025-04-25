@@ -1,5 +1,6 @@
 package met.realfreehij.classicbukkit.commands.custom;
 
+import com.mojang.minecraft.level.Level;
 import com.mojang.minecraft.level.LevelIO;
 import met.realfreehij.classicbukkit.ClassicBukkit;
 import met.realfreehij.classicbukkit.commands.Command;
@@ -17,10 +18,13 @@ public class SaveCommand extends Command {
     @Override
     public boolean onExecution(String[] args, CommandIssuer player) {
         try {
-            LevelIO.save(ClassicBukkit.getServer().level, new FileOutputStream("server_level.dat"));
-            player.sendChatMessage(ChatColor.GREEN + "Successfully saved the map!");
+        	for(Level level : ClassicBukkit.getServer().levels.values()) { //TODO use Server.saveAll or whatever is it called
+        		level.save();
+        	}
+            
+            player.sendChatMessage(ChatColor.GREEN + "Successfully saved the maps!");
         } catch (IOException e) {
-            player.sendChatMessage(ChatColor.RED + "Error saving level");
+            player.sendChatMessage(ChatColor.RED + "Error saving levels");
             e.printStackTrace();
         }
         return false;

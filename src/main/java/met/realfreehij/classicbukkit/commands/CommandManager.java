@@ -23,6 +23,7 @@ public class CommandManager {
     	addCommand(new StopCommand());
     	addCommand(new OpCommand());
     	addCommand(new DeopCommand());
+    	addCommand(new GotoLevelCommand());
     }
 
     public void addCommand(Command command) {

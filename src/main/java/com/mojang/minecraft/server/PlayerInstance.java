@@ -25,11 +25,15 @@ import com.mojang.minecraft.net.packets.TimedOutPacket;
 import met.realfreehij.classicbukkit.ClassicBukkit;
 import met.realfreehij.classicbukkit.commands.CommandIssuer;
 import met.realfreehij.classicbukkit.plugins.events.*;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.zip.GZIPOutputStream;
 
 public final class PlayerInstance implements CommandIssuer{
 	private static Logger logger = MinecraftServer.logger;
@@ -51,20 +55,20 @@ public final class PlayerInstance implements CommandIssuer{
 	private boolean ignorePackets = false;
 	private int packetHandlingCounter = 0;
 	private int ticks = 0;
-	private volatile byte[] blocks = null;
+	private boolean needsLogin = false;
 	public boolean placeUnbreakable = false;
-
-	public PlayerInstance(MinecraftServer var1, SocketConnection var2, int var3) {
-		this.minecraft = var1;
-		this.connection = var2;
-		this.playerID = var3;
+	public Level level;
+	public PlayerInstance(MinecraftServer server, SocketConnection con, int id, Level level) {
+		this.minecraft = server;
+		this.connection = con;
+		this.playerID = id;
 		this.currentTime = System.currentTimeMillis();
-		var2.player = this;
-		Level var4 = var1.level;
-		this.x = (var4.xSpawn << 5) + 16;
-		this.y = (var4.ySpawn << 5) + 16;
-		this.z = (var4.zSpawn << 5) + 16;
-		this.yaw = (int)(var4.rotSpawn * 256.0F / 360.0F);
+		con.player = this;
+		this.level = level;
+		this.x = (this.level.xSpawn << 5) + 16;
+		this.y = (this.level.ySpawn << 5) + 16;
+		this.z = (this.level.zSpawn << 5) + 16;
+		this.yaw = (int)(this.level.rotSpawn * 256.0F / 360.0F);
 		this.pitch = 0;
 	}
 
@@ -106,8 +110,8 @@ public final class PlayerInstance implements CommandIssuer{
 					this.onlyIP = true;
 					this.name = username;
 					this.connection.sendPacket(new LoginPacket(PROTOCOL_VERSION, this.minecraft.serverName, this.minecraft.motd, this.minecraft.admins.containsPlayer(username) ? 100 : 0));
-					byte[] levelData = this.minecraft.level.copyBlocks();
-					(new MonitorBlocksThread(this, levelData)).start();
+					this.needsLogin = true;
+					this.setLevel(this.level);
 				}
 			}
 		}
@@ -123,7 +127,7 @@ public final class PlayerInstance implements CommandIssuer{
 				ClassicBukkit.pluginManager.fireSetTile(event);
 				
 				if(event.isCancelled()) {
-					ClassicBukkit.getServer().setTile(x, y, z);
+					ClassicBukkit.getServer().setTile(this.level, x, y, z);
 					return;
 				}
 
@@ -208,7 +212,55 @@ public final class PlayerInstance implements CommandIssuer{
 	}
 
 	public final void setBlocks(byte[] blocks) {
-		this.blocks = blocks;
+		byte[] dest = new byte[1024];
+		int lastIndex = 0;
+		int var17 = blocks.length;
+		int length;
+		while(var17 > 0) {
+			length = var17;
+			if(var17 > dest.length) {
+				length = dest.length;
+			}
+			
+			System.arraycopy(blocks, lastIndex, dest, 0, length);
+			this.connection.sendPacket(new LevelDataChunkPacket((short)length, dest, (byte)((lastIndex + length) * 100 / blocks.length)));
+			var17 -= length;
+			lastIndex += length;
+		}
+
+		this.connection.sendPacket(new LevelFinalizePacket(level));
+		if(needsLogin) {
+			Level level = this.level;
+			this.connection.sendPacket(new PlayerJoinPacket((byte)-1, this.name, (short)this.x, (short)this.y, (short)this.z, (byte)this.yaw, (byte)this.pitch));
+			this.minecraft.sendPlayerPacket(this, 
+				new PlayerJoinPacket((byte)this.playerID, this.name, 
+					(short)((level.xSpawn << 5) + 16), (short)((level.ySpawn << 5) + 16), (short)((level.zSpawn << 5) + 16), 
+					((byte)(level.rotSpawn * 256.0F / 360.0F)), (byte)0
+				)
+			);
+			
+			this.minecraft.sendPacket(new ChatMessagePacket(this.name + " joined the game"));
+			ClassicBukkit.pluginManager.firePlayerJoin(new EventPlayerJoin(this));
+			Iterator var20 = this.minecraft.getPlayerList().iterator();
+
+			while(var20.hasNext()) {
+				PlayerInstance var12 = (PlayerInstance)var20.next();
+				if(var12 != null && var12 != this && var12.onlyIP) {
+					this.connection.sendPacket(new PlayerJoinPacket(var12));
+				}
+			}
+
+			this.sendingPackets = true;
+			length = 0;
+
+			while(length < this.packets.size()) {
+				Packet var14 = (Packet)this.packets.get(length++);
+				this.sendPacket(var14);
+			}
+
+			this.packets = null;
+			needsLogin = false;
+		}
 	}
 
 	public final void handlePackets() {
@@ -237,7 +289,7 @@ public final class PlayerInstance implements CommandIssuer{
 				if(this.packetHandlingCounter == 100) {
 					this.kickCheat("Too much clicking!");
 				} else {
-					Level level = this.minecraft.level;
+					Level level = this.level;
 					float xdiff = (float)x - (float)this.x / 32.0F;
 					float ydiff = (float)y - ((float)this.y / 32.0F - 1.62F);
 					float zdiff = (float)z - (float)this.z / 32.0F;
@@ -336,59 +388,30 @@ public final class PlayerInstance implements CommandIssuer{
 
 		if(!this.onlyIP && System.currentTimeMillis() - this.currentTime > 5000L) {
 			this.kick("You need to log in!");
-		} else if(this.blocks != null) {
-			Level var11 = this.minecraft.level;
-			byte[] dest = new byte[1024];
-			int lastIndex = 0;
-			int var17 = this.blocks.length;
-			this.connection.sendPacket(new LevelInitializePacket());
-
-			int length;
-			while(var17 > 0) {
-				length = var17;
-				if(var17 > dest.length) {
-					length = dest.length;
-				}
-
-				System.arraycopy(this.blocks, lastIndex, dest, 0, length);
-				this.connection.sendPacket(new LevelDataChunkPacket((short)length, dest, (byte)((lastIndex + length) * 100 / this.blocks.length)));
-				var17 -= length;
-				lastIndex += length;
-			}
-
-			this.connection.sendPacket(new LevelFinalizePacket(var11));
-			this.connection.sendPacket(new PlayerJoinPacket((byte)-1, this.name, (short)this.x, (short)this.y, (short)this.z, (byte)this.yaw, (byte)this.pitch));
-			this.minecraft.sendPlayerPacket(this, 
-				new PlayerJoinPacket((byte)this.playerID, this.name, 
-					(short)((var11.xSpawn << 5) + 16), (short)((var11.ySpawn << 5) + 16), (short)((var11.zSpawn << 5) + 16), 
-					((byte)(var11.rotSpawn * 256.0F / 360.0F)), (byte)0
-				)
-			);
-			
-			this.minecraft.sendPacket(new ChatMessagePacket(this.name + " joined the game"));
-			ClassicBukkit.pluginManager.firePlayerJoin(new EventPlayerJoin(this));
-			Iterator var20 = this.minecraft.getPlayerList().iterator();
-
-			while(var20.hasNext()) {
-				PlayerInstance var12 = (PlayerInstance)var20.next();
-				if(var12 != null && var12 != this && var12.onlyIP) {
-					this.connection.sendPacket(new PlayerJoinPacket(var12));
-				}
-			}
-
-			this.sendingPackets = true;
-			length = 0;
-
-			while(length < this.packets.size()) {
-				Packet var14 = (Packet)this.packets.get(length++);
-				this.sendPacket(var14);
-			}
-
-			this.packets = null;
-			this.blocks = null;
 		}
 	}
 
+
+	public void setLevel(Level level) {
+		this.level = level;
+		this.connection.sendPacket(new LevelInitializePacket());
+
+		byte[] levelData = this.level.copyBlocks();
+		
+		ByteArrayOutputStream var1 = new ByteArrayOutputStream();
+		byte[] var2 = levelData;
+
+		try {
+			DataOutputStream var6 = new DataOutputStream(new GZIPOutputStream(var1));
+			var6.writeInt(var2.length);
+			var6.write(var2);
+			var6.close();
+		} catch (Exception var4) {
+			throw new RuntimeException(var4);
+		}
+		this.setBlocks(var1.toByteArray());
+	}
+	
 	public final void sendPacket(Packet var1) {
 		if(!this.sendingPackets) {
 			this.packets.add(var1);

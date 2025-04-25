@@ -145,7 +145,6 @@ public final class SocketConnection {
 		if(data.length < 1024) {
 			data = Arrays.copyOf(data, 1024);
 		}
-
 		this.writeBuffer.put(data);
 	}
 
